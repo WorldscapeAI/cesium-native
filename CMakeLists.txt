@@ -121,7 +121,7 @@ if(CESIUM_INSTALL_STATIC_LIBS OR CESIUM_INSTALL_HEADERS)
 
         if (CESIUM_INSTALL_STATIC_LIBS AND NOT PACKAGE IN_LIST CESIUM_EXCLUDE_INSTALL_STATIC_LIBS AND EXISTS ${PACKAGE_DIR}/lib)
             install(
-                DIRECTORY ${PACKAGE_DIR}/lib/
+                DIRECTORY ${PACKAGE_DIR}/$<$<CONFIG:Debug>:debug/>lib/
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}
             )
         endif()
@@ -134,7 +134,7 @@ if(CESIUM_INSTALL_STATIC_LIBS)
         message(DEBUG "PACKAGE_DIR ${PACKAGE_DIR}")
         if (NOT PACKAGE IN_LIST CESIUM_EXCLUDE_INSTALL_STATIC_LIBS AND EXISTS ${PACKAGE_DIR}/lib)
             install(
-                DIRECTORY ${PACKAGE_DIR}/lib/
+                DIRECTORY ${PACKAGE_DIR}/$<$<CONFIG:Debug>:debug/>lib/
                 DESTINATION ${CMAKE_INSTALL_LIBDIR}
             )
         endif()
