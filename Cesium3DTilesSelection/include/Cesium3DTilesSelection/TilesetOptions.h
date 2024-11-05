@@ -328,6 +328,17 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
    * If no ellipsoid is set, Ellipsoid::WGS84 will be used by default.
    */
   CesiumGeospatial::Ellipsoid ellipsoid = CesiumGeospatial::Ellipsoid::WGS84;
+
+/**
+   * @brief Whether to calculate screen space error for tiles and to stop refining
+   * them if they meet the limit.
+   *
+   * This is useful in conjunction with excluders for forcing a wide region of
+   * terrain to load, but you have to supply an excluder that will enforce sane
+   * limits on the number of tiles loaded, otherwise you may end up loading the
+   * entire world.
+   */
+  bool enableSse = true;
 };
 
 } // namespace Cesium3DTilesSelection

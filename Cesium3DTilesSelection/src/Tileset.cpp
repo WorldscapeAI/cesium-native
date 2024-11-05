@@ -956,8 +956,15 @@ Tileset::TraversalDetails Tileset::_visitTileIfNeeded(
     ++result.culledTilesVisited;
   }
 
-  bool meetsSse =
-      this->_meetsSse(frameState.frustums, tile, distances, cullResult.culled);
+  bool meetsSse;
+  if (this->_options.enableSse)
+  {
+    meetsSse = this->_meetsSse(frameState.frustums, tile, distances, cullResult.culled);
+  }
+  else
+  {
+    meetsSse = false;
+  }
 
   return this->_visitTile(
       frameState,
