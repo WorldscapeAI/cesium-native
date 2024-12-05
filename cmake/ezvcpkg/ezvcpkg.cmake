@@ -34,6 +34,8 @@ macro(EZVCPKG_CALCULATE_PATHS)
                 # This causes the vcpkg folder to end up in an unusable state, so we default to the
                 # home directory instead
                 set(EZVCPKG_BASEDIR "$ENV{HOME}/.ezvcpkg")
+            elseif(WIN32)
+                set(EZVCPKG_BASEDIR "$ENV{USERPROFILE}/.ezvcpkg")
             else()
                 # Initially defaulted to $ENV{TEMP} but the github build hosts don't populate this
                 set(EZVCPKG_BASEDIR "$ENV{HOME}/.ezvcpkg")

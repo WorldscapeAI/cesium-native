@@ -70,8 +70,6 @@ if(NOT VCPKG_MANIFEST_MODE)
         CLEAN_BUILDTREES
         # Update the cmake toolchain so it can find the above packages
         UPDATE_TOOLCHAIN
-        # Force the installation of each package one at a time, or the Travis CI build will time out waiting for output
-        SERIALIZE
     )
 endif()
 
