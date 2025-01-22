@@ -114,13 +114,19 @@ struct CESIUMGLTF_API ImageAsset final
   int64_t sizeBytes = -1;
 
   /**
+   * @brief Constructs an empty image asset.
+   */
+  ImageAsset() = default;
+
+  /**
    * @brief Gets the size of this asset, in bytes.
    *
    * If {@link sizeBytes} is greater than or equal to zero, it is returned.
    * Otherwise, the size of the {@link pixelData} array is returned.
    */
   int64_t getSizeBytes() const {
-    return this->sizeBytes >= 0 ? this->sizeBytes : this->pixelData.size();
+    return this->sizeBytes >= 0 ? this->sizeBytes
+                                : static_cast<int64_t>(this->pixelData.size());
   }
 };
 } // namespace CesiumGltf

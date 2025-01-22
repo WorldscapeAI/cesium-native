@@ -83,8 +83,15 @@ public:
   static const int ErrorChannelsAndTypeMismatch = 22;
 };
 
+/**
+ * @brief Attempts to obtain a scalar value from the given span of bytes.
+ *
+ * @tparam ElementType The scalar value type to read from `bytes`.
+ * @param bytes A span of bytes to convert into a scalar value.
+ * @returns A value of `ElementType`.
+ */
 template <typename ElementType>
-ElementType assembleScalarValue(const gsl::span<uint8_t> bytes) noexcept {
+ElementType assembleScalarValue(const std::span<uint8_t> bytes) noexcept {
   if constexpr (std::is_same_v<ElementType, float>) {
     CESIUM_ASSERT(
         bytes.size() == sizeof(float) &&
@@ -110,8 +117,15 @@ ElementType assembleScalarValue(const gsl::span<uint8_t> bytes) noexcept {
   }
 }
 
+/**
+ * @brief Attempts to obtain a vector value from the given span of bytes.
+ *
+ * @tparam ElementType The vector value type to read from `bytes`.
+ * @param bytes A span of bytes to convert into a vector value.
+ * @returns A value of `ElementType`.
+ */
 template <typename ElementType>
-ElementType assembleVecNValue(const gsl::span<uint8_t> bytes) noexcept {
+ElementType assembleVecNValue(const std::span<uint8_t> bytes) noexcept {
   ElementType result = ElementType();
 
   const glm::length_t N =
@@ -157,9 +171,16 @@ ElementType assembleVecNValue(const gsl::span<uint8_t> bytes) noexcept {
   return result;
 }
 
+/**
+ * @brief Attempts to obtain an array value from the given span of bytes.
+ *
+ * @tparam T The element type to read from `bytes`.
+ * @param bytes A span of bytes to convert into an array value.
+ * @returns A \ref PropertyArrayCopy containing the elements read.
+ */
 template <typename T>
 PropertyArrayCopy<T>
-assembleArrayValue(const gsl::span<uint8_t> bytes) noexcept {
+assembleArrayValue(const std::span<uint8_t> bytes) noexcept {
   std::vector<T> result(bytes.size() / sizeof(T));
 
   if constexpr (sizeof(T) == 2) {
@@ -178,9 +199,18 @@ assembleArrayValue(const gsl::span<uint8_t> bytes) noexcept {
   return PropertyArrayCopy<T>(std::move(result));
 }
 
+/**
+ * @brief Assembles the given type from the provided channel values of sampling
+ * a texture.
+ *
+ * @tparam ElementType The type of element to assemble.
+ * @param bytes The byte values of the sampled channels of the texture.
+ * @returns The result of \ref assembleScalarValue, \ref assembleVecNValue, or
+ * \ref assembleArrayValue depending on `ElementType`.
+ */
 template <typename ElementType>
 PropertyValueViewToCopy<ElementType>
-assembleValueFromChannels(const gsl::span<uint8_t> bytes) noexcept {
+assembleValueFromChannels(const std::span<uint8_t> bytes) noexcept {
   CESIUM_ASSERT(
       bytes.size() > 0 && "Channel input must have at least one value.");
 
@@ -256,8 +286,7 @@ public:
   /**
    * @brief Constructs an instance of an empty property that specifies a default
    * value. Although this property has no data, it can return the default value
-   * when {@link PropertyTexturePropertyView::get} is called. However,
-   * {@link PropertyTexturePropertyView::getRaw} cannot be used.
+   * when \ref get is called. However, \ref getRaw cannot be used.
    *
    * @param classProperty The {@link ClassProperty} this property conforms to.
    */
@@ -291,7 +320,6 @@ public:
    * @param classProperty The {@link ClassProperty} this property conforms to.
    * @param sampler The {@link Sampler} used by the property.
    * @param image The {@link ImageAsset} used by the property.
-   * @param channels The value of {@link PropertyTextureProperty::channels}.
    * @param options The options for constructing the view.
    */
   PropertyTexturePropertyView(
@@ -423,7 +451,7 @@ public:
         this->sampleNearestPixel(u, v, this->_channels);
 
     return assembleValueFromChannels<ElementType>(
-        gsl::span(sample.data(), this->_channels.size()));
+        std::span(sample.data(), this->_channels.size()));
   }
 
   /**
@@ -489,8 +517,8 @@ public:
   /**
    * @brief Constructs an instance of an empty property that specifies a
    * default value. Although this property has no data, it can return the
-   * default value when {@link PropertyTexturePropertyView::get} is called.
-   * However, {@link PropertyTexturePropertyView::getRaw} cannot be used.
+   * default value when {@link PropertyTexturePropertyView<ElementType, true>::get} is called.
+   * However, {@link PropertyTexturePropertyView<ElementType, true>::getRaw} cannot be used.
    *
    * @param classProperty The {@link ClassProperty} this property conforms to.
    */
@@ -524,7 +552,6 @@ public:
    * @param classProperty The {@link ClassProperty} this property conforms to.
    * @param sampler The {@link Sampler} used by the property.
    * @param image The {@link ImageAsset} used by the property.
-   * @param channels The value of {@link PropertyTextureProperty::channels}.
    * @param options The options for constructing the view.
    */
   PropertyTexturePropertyView(
@@ -675,7 +702,7 @@ public:
         this->sampleNearestPixel(u, v, this->_channels);
 
     return assembleValueFromChannels<ElementType>(
-        gsl::span(sample.data(), this->_channels.size()));
+        std::span(sample.data(), this->_channels.size()));
   }
 
   /**

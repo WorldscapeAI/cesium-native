@@ -9,12 +9,12 @@
 #include <CesiumGltf/Model.h>
 #include <CesiumUtility/ErrorList.h>
 
-#include <gsl/span>
 #include <rapidjson/document.h>
 
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <span>
 #include <vector>
 
 namespace CesiumAsync {
@@ -23,6 +23,12 @@ class IAssetRequest;
 
 namespace CesiumQuantizedMeshTerrain {
 
+/**
+ * @brief The results of a \ref QuantizedMeshLoader::load operation, containing
+ * either the loaded model, an improved bounding region for the tile, and
+ * available quadtree tiles discovered, if the load succeeded - or the request
+ * made and the errors that were returned, if the load failed.
+ */
 struct QuantizedMeshLoadResult {
   /**
    * @brief The glTF model to be rendered for this tile.
@@ -55,11 +61,25 @@ struct QuantizedMeshLoadResult {
    */
   std::shared_ptr<CesiumAsync::IAssetRequest> pRequest;
 
+  /**
+   * @brief The errors and warnings reported while loading this tile.
+   */
   CesiumUtility::ErrorList errors;
 };
 
+/**
+ * @brief The metadata of a Quantized Mesh tile, returned by \ref
+ * QuantizedMeshLoader::loadMetadata.
+ */
 struct QuantizedMeshMetadataResult {
+  /**
+   * @brief Information about the availability of child tiles.
+   */
   std::vector<CesiumGeometry::QuadtreeTileRectangularRange> availability;
+
+  /**
+   * @brief The errors and warnings reported while loading this tile, if any.
+   */
   CesiumUtility::ErrorList errors;
 };
 
@@ -72,16 +92,19 @@ public:
    * @brief Create a {@link QuantizedMeshLoadResult} from the given data.
    *
    * @param tileID The tile ID.
-   * @param tileBoundingVoume The tile bounding volume.
+   * @param tileBoundingVolume The tile bounding volume.
    * @param url The URL from which the data was loaded.
    * @param data The actual tile data.
+   * @param enableWaterMask If true, will attempt to load a water mask from the
+   * quantized mesh data.
+   * @param ellipsoid The ellipsoid to use for this quantized mesh.
    * @return The {@link QuantizedMeshLoadResult}
    */
   static QuantizedMeshLoadResult load(
       const CesiumGeometry::QuadtreeTileID& tileID,
       const CesiumGeospatial::BoundingRegion& tileBoundingVolume,
       const std::string& url,
-      const gsl::span<const std::byte>& data,
+      const std::span<const std::byte>& data,
       bool enableWaterMask,
       const CesiumGeospatial::Ellipsoid& ellipsoid CESIUM_DEFAULT_ELLIPSOID);
 
@@ -94,7 +117,7 @@ public:
    * @return The parsed metadata.
    */
   static QuantizedMeshMetadataResult loadMetadata(
-      const gsl::span<const std::byte>& data,
+      const std::span<const std::byte>& data,
       const CesiumGeometry::QuadtreeTileID& tileID);
 
   /**

@@ -23,7 +23,8 @@ public:
   // Following the example of boost::instrusive::list's list_member_hook, the
   // copy constructor and assignment operator do nothing.
   // https://www.boost.org/doc/libs/1_73_0/doc/html/boost/intrusive/list_member_hook.html
-  DoublyLinkedListPointers(DoublyLinkedListPointers& rhs) noexcept
+  DoublyLinkedListPointers(
+      [[maybe_unused]] DoublyLinkedListPointers& rhs) noexcept
       : DoublyLinkedListPointers() {}
 
   /**
@@ -264,6 +265,9 @@ private:
   T* _pTail = nullptr;
 };
 
+/**
+ * @brief An intrusive doubly-linked list.
+ */
 template <typename T, DoublyLinkedListPointers<T>(T::*Pointers)>
 using DoublyLinkedList = DoublyLinkedListAdvanced<T, T, Pointers>;
 

@@ -106,7 +106,7 @@ public:
    *
    * If T does not match the type specified by the class property, this returns
    * an invalid PropertyTexturePropertyView. Likewise, if the value of
-   * Normalized does not match the value of {@ClassProperty::normalized} for that
+   * Normalized does not match the value of {@link ClassProperty::normalized} for that
    * class property, this returns an invalid property view. Only types with
    * integer components may be normalized.
    *
@@ -141,7 +141,7 @@ public:
 
   /**
    * @brief Gets a {@link PropertyTexturePropertyView} through a callback that accepts a
-   * property id and a {@link PropertyTexturePropertyView<T>} that views the data
+   * property id and a {@link PropertyTexturePropertyView} that views the data
    * of the property with the specified id.
    *
    * This method will validate the EXT_structural_metadata format to ensure
@@ -155,9 +155,10 @@ public:
    * property view will be passed to the callback.
    *
    * @param propertyId The id of the property to retrieve data from
-   * @tparam callback A callback function that accepts a property id and a
-   * {@link PropertyTexturePropertyView<T>}
+   * @param callback A callback function that accepts a property id and a
+   * {@link PropertyTexturePropertyView}
    * @param propertyOptions The options to apply to the property.
+   * @tparam Callback The type of the callback function.
    */
   template <typename Callback>
   void getPropertyView(
@@ -268,7 +269,7 @@ public:
 
   /**
    * @brief Iterates over each property in the {@link PropertyTexture} with a callback
-   * that accepts a property id and a {@link PropertyTexturePropertyView<T>} to view
+   * that accepts a property id and a {@link PropertyTexturePropertyView} to view
    * the data stored in the {@link PropertyTextureProperty}.
    *
    * This method will validate the EXT_structural_metadata format to ensure
@@ -281,10 +282,11 @@ public:
    * error status will be passed to the callback. Otherwise, a valid property
    * view will be passed to the callback.
    *
-   * @tparam callback A callback function that accepts property id and
-   * {@link PropertyTexturePropertyView<T>}
+   * @param callback A callback function that accepts property id and
+   * {@link PropertyTexturePropertyView}
    * @param propertyOptions The options to apply to each property in the
    * property texture.
+   * @tparam Callback The type of the callback function.
    */
 
   template <typename Callback>

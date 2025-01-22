@@ -5,10 +5,9 @@
 
 #include <CesiumUtility/SpanHelper.h>
 
-#include <gsl/span>
-
 #include <cstddef>
 #include <cstring>
+#include <span>
 #include <variant>
 #include <vector>
 
@@ -33,22 +32,36 @@ public:
    *
    * @param buffer The buffer containing the values.
    */
-  PropertyArrayView(const gsl::span<const std::byte>& buffer) noexcept
+  PropertyArrayView(const std::span<const std::byte>& buffer) noexcept
       : _values{CesiumUtility::reintepretCastSpan<const ElementType>(buffer)} {}
 
+  /**
+   * @brief Accesses the element of this array at the given index.
+   */
   const ElementType& operator[](int64_t index) const noexcept {
     return this->_values[index];
   }
 
+  /**
+   * @brief The number of elements in this array.
+   */
   int64_t size() const noexcept { return this->_values.size(); }
 
+  /**
+   * @brief The `begin` iterator.
+   */
   auto begin() { return this->_values.begin(); }
+  /**
+   * @brief The `end` iterator.
+   */
   auto end() { return this->_values.end(); }
+  /** @copydoc begin */
   auto begin() const { return this->_values.begin(); }
+  /** @copydoc end */
   auto end() const { return this->_values.end(); }
 
 private:
-  gsl::span<const ElementType> _values;
+  std::span<const ElementType> _values;
 };
 
 /**
@@ -71,7 +84,7 @@ public:
   /**
    * @brief Constructs an array view from a buffer.
    *
-   * @param buffer The buffer containing the values.
+   * @param values The buffer containing the values.
    */
   PropertyArrayCopy(const std::vector<ElementType>& values) noexcept
       : _storage(), _view() {
@@ -85,34 +98,61 @@ public:
     this->_view = PropertyArrayView<ElementType>(this->_storage);
   }
 
+  /** @brief Default move constructor */
   PropertyArrayCopy(PropertyArrayCopy&&) = default;
+  /** @brief Default move assignment operator */
   PropertyArrayCopy& operator=(PropertyArrayCopy&&) = default;
 
+  /** @brief Creates a new \ref PropertyArrayCopy directly from a buffer of
+   * bytes, which will be moved into this copy. */
   PropertyArrayCopy(std::vector<std::byte>&& buffer) noexcept
       : _storage(std::move(buffer)), _view(this->_storage) {}
 
+  /** @brief Copy constructor */
   PropertyArrayCopy(const PropertyArrayCopy& rhs)
       : _storage(rhs._storage), _view(this->_storage) {}
 
+  /** @brief Copy assignment operator */
   PropertyArrayCopy& operator=(const PropertyArrayCopy& rhs) {
     this->_storage = rhs._storage;
     this->_view = PropertyArrayView<ElementType>(this->_storage);
     return *this;
   }
 
+  /**
+   * @brief Returns the `ElementType` at the given index from this copy.
+   *
+   * @param index The index to obtain.
+   * @returns The `ElementType` at that index from the internal view.
+   */
   const ElementType& operator[](int64_t index) const noexcept {
     return this->_view[index];
   }
 
+  /** @copydoc PropertyArrayView::size */
   int64_t size() const noexcept { return this->_view.size(); }
 
+  /** @copydoc PropertyArrayView::begin */
   auto begin() { return this->_view.begin(); }
+  /** @copydoc PropertyArrayView::end */
   auto end() { return this->_view.end(); }
+  /** @copydoc PropertyArrayView::begin */
   auto begin() const { return this->_view.begin(); }
+  /** @copydoc PropertyArrayView::end */
   auto end() const { return this->_view.end(); }
 
+  /**
+   * @brief Obtains a \ref PropertyArrayView over the contents of this copy.
+   */
   const PropertyArrayView<ElementType>& view() const { return this->_view; }
 
+  /**
+   * @brief Obtains a buffer and view from the copied data, leaving this \ref
+   * PropertyArrayCopy empty.
+   *
+   * @param outBuffer The destination where this copy's internal buffer will be
+   * moved to.
+   */
   PropertyArrayView<ElementType>
   toViewAndExternalBuffer(std::vector<std::byte>& outBuffer) && {
     outBuffer = std::move(this->_storage);
@@ -126,6 +166,13 @@ private:
   PropertyArrayView<ElementType> _view;
 };
 
+/**
+ * @brief A view on a bool array element of a {@link PropertyTableProperty}
+ * or {@link PropertyTextureProperty}.
+ *
+ * Provides utility to retrieve the data stored in the array of
+ * elements via the array index operator.
+ */
 template <> class PropertyArrayView<bool> {
 public:
   /**
@@ -142,11 +189,14 @@ public:
    * @param size The number of values in the array.
    */
   PropertyArrayView(
-      const gsl::span<const std::byte>& buffer,
+      const std::span<const std::byte>& buffer,
       int64_t bitOffset,
       int64_t size) noexcept
       : _values{buffer}, _bitOffset{bitOffset}, _size{size} {}
 
+  /**
+   * @brief Obtains the element in the array at the given index.
+   */
   bool operator[](int64_t index) const noexcept {
     index += _bitOffset;
     const int64_t byteIndex = index / 8;
@@ -155,14 +205,24 @@ public:
     return bitValue == 1;
   }
 
+  /**
+   * @brief The number of entries in the array.
+   */
   int64_t size() const noexcept { return _size; }
 
 private:
-  gsl::span<const std::byte> _values;
+  std::span<const std::byte> _values;
   int64_t _bitOffset;
   int64_t _size;
 };
 
+/**
+ * @brief A view on a string array element of a {@link PropertyTableProperty}
+ * or {@link PropertyTextureProperty}.
+ *
+ * Provides utility to retrieve the data stored in the array of
+ * elements via the array index operator.
+ */
 template <> class PropertyArrayView<std::string_view> {
 public:
   /**
@@ -183,8 +243,8 @@ public:
    * @param size The number of values in the array.
    */
   PropertyArrayView(
-      const gsl::span<const std::byte>& values,
-      const gsl::span<const std::byte>& stringOffsets,
+      const std::span<const std::byte>& values,
+      const std::span<const std::byte>& stringOffsets,
       PropertyComponentType stringOffsetType,
       int64_t size) noexcept
       : _values{values},
@@ -192,6 +252,9 @@ public:
         _stringOffsetType{stringOffsetType},
         _size{size} {}
 
+  /**
+   * @brief Obtains an `std::string_view` for the element at the given index.
+   */
   std::string_view operator[](int64_t index) const noexcept {
     const size_t currentOffset =
         getOffsetFromOffsetsBuffer(index, _stringOffsets, _stringOffsetType);
@@ -204,15 +267,21 @@ public:
         (nextOffset - currentOffset));
   }
 
+  /**
+   * @brief The number of elements in this array.
+   */
   int64_t size() const noexcept { return _size; }
 
 private:
-  gsl::span<const std::byte> _values;
-  gsl::span<const std::byte> _stringOffsets;
+  std::span<const std::byte> _values;
+  std::span<const std::byte> _stringOffsets;
   PropertyComponentType _stringOffsetType;
   int64_t _size;
 };
 
+/** @brief Compares two \ref PropertyArrayView instances by comparing their
+ * values. If the two arrays aren't the same size, this comparison will return
+ * false. */
 template <typename T>
 bool operator==(
     const PropertyArrayView<T>& lhs,
@@ -231,6 +300,8 @@ bool operator==(
   return true;
 }
 
+/** @brief Compares a \ref PropertyArrayView with a \ref
+ * PropertyArrayCopy by creating a view from the copy and comparing the two. */
 template <typename T>
 bool operator==(
     const PropertyArrayView<T>& lhs,
@@ -238,6 +309,8 @@ bool operator==(
   return lhs == PropertyArrayView(rhs);
 }
 
+/** @brief Compares a \ref PropertyArrayView with a \ref
+ * PropertyArrayCopy by creating a view from the copy and comparing the two. */
 template <typename T>
 bool operator==(
     const PropertyArrayCopy<T>& lhs,
@@ -245,6 +318,8 @@ bool operator==(
   return lhs.view() == rhs;
 }
 
+/** @brief Compares two \ref PropertyArrayCopy instances by creating
+ * views from each instance and comparing the two. */
 template <typename T>
 bool operator==(
     const PropertyArrayCopy<T>& lhs,
@@ -252,6 +327,9 @@ bool operator==(
   return lhs.view() == rhs.view();
 }
 
+/**
+ * @brief Compares two \ref PropertyArrayView instances and returns the inverse.
+ */
 template <typename T>
 bool operator!=(
     const PropertyArrayView<T>& lhs,
@@ -259,6 +337,9 @@ bool operator!=(
   return !(lhs == rhs);
 }
 
+/** @brief Compares a \ref PropertyArrayView with a \ref
+ * PropertyArrayCopy by creating a view from the copy and returning the inverse
+ * of comparing the two. */
 template <typename T>
 bool operator!=(
     const PropertyArrayView<T>& lhs,
@@ -266,6 +347,9 @@ bool operator!=(
   return !(lhs == rhs);
 }
 
+/** @brief Compares a \ref PropertyArrayView with a \ref
+ * PropertyArrayCopy by creating a view from the copy and returning the inverse
+ * of comparing the two. */
 template <typename T>
 bool operator!=(
     const PropertyArrayCopy<T>& lhs,
@@ -273,6 +357,9 @@ bool operator!=(
   return !(lhs == rhs);
 }
 
+/** @brief Compares two \ref
+ * PropertyArrayCopy instances by creating views from both instances and
+ * returning the inverse of comparing the two. */
 template <typename T>
 bool operator!=(
     const PropertyArrayCopy<T>& lhs,

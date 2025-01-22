@@ -27,6 +27,10 @@ namespace CesiumGltf {
  */
 template <typename TTo, typename TFrom, typename Enable = void>
 struct MetadataConversions {
+  /**
+   * @brief Converts between `TFrom` and `TTo` where no actual conversion is
+   * defined, returning `std::nullopt`.
+   */
   static std::optional<TTo> convert(TFrom /*from*/) { return std::nullopt; }
 };
 
@@ -34,6 +38,10 @@ struct MetadataConversions {
  * @brief Trivially converts any type to itself.
  */
 template <typename T> struct MetadataConversions<T, T> {
+  /**
+   * @brief Converts an instance of `T` to an instance of `T`, always returning
+   * the same value that was passed in.
+   */
   static std::optional<T> convert(T from) { return from; }
 };
 
@@ -251,7 +259,6 @@ struct MetadataConversions<
    * This returns std::nullopt if no number is parsed from the string.
    *
    * @param from The std::string to parse from.
-   * @param defaultValue The default value to be returned if conversion fails.
    */
   static std::optional<TTo> convert(const std::string& from) {
     if (from.size() == 0) {
@@ -599,7 +606,6 @@ struct MetadataConversions<
    * @brief Converts a scalar to a std::string.
    *
    * @param from The scalar to be converted.
-   * @param defaultValue The default value to be returned if conversion fails.
    */
   static std::optional<std::string> convert(TFrom from) {
     return std::to_string(from);

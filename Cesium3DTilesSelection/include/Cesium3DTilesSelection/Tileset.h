@@ -27,7 +27,7 @@ namespace Cesium3DTilesSelection {
 class TilesetContentManager;
 class TilesetMetadata;
 class TilesetHeightQuery;
-class TilesetHeightRequest;
+struct TilesetHeightRequest;
 class TilesetSharedAssetSystem;
 
 /**
@@ -234,6 +234,14 @@ public:
    * @param callback The function to invoke.
    */
   void forEachLoadedTile(const std::function<void(Tile& tile)>& callback);
+
+  /**
+   * @brief Invokes a function for each tile that is currently loaded.
+   *
+   * @param callback The function to invoke.
+   */
+  void forEachLoadedTile(
+      const std::function<void(const Tile& tile)>& callback) const;
 
   /**
    * @brief Gets the total number of bytes of tile and raster overlay data that

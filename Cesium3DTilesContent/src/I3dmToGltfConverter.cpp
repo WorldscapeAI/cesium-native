@@ -82,7 +82,7 @@ void repositionInstances(DecodedInstances& decodedInstances) {
 }
 
 void parseI3dmHeader(
-    const gsl::span<const std::byte>& instancesBinary,
+    const std::span<const std::byte>& instancesBinary,
     I3dmHeader& header,
     uint32_t& headerLength,
     GltfConverterResult& result) {
@@ -143,29 +143,17 @@ glm::vec3 decodeOct32P(const uint16_t rawOct[2]) {
 
 /*
   Calculate the rotation quaternion described by the up, right vectors passed
-  in NORMAL_UP and NORMAL_RIGHT. This is composed of two rotations:
-   + The rotation that takes the up vector to its new position;
-   + The rotation around the new up vector that takes the right vector to its
-  new position.
+  in NORMAL_UP and NORMAL_RIGHT.
 
-  I like to think of each rotation as describing a coordinate frame. The
-  calculation of the second rotation must take place within the first frame.
-
-  The rotations are calculated by finding the rotation that takes one vector to
-  another.
+  There may be a faster method that avoids creating a rotation matrix, but it is
+  hard to get the exceptional cases correct e.g., rotations of 180 degrees about
+  an axis.
  */
 
 glm::quat rotationFromUpRight(const glm::vec3& up, const glm::vec3& right) {
-  // First rotation: up
-  auto upRot = CesiumUtility::Math::rotation(glm::vec3(0.0f, 1.0f, 0.0f), up);
-  // We can rotate a point vector by a quaternion using q * (0, v) *
-  // conj(q). But here we are doing an inverse rotation of the right vector into
-  // the "up frame."
-  glm::quat temp = glm::conjugate(upRot) * glm::quat(0.0f, right) * upRot;
-  glm::vec3 innerRight(temp.x, temp.y, temp.z);
-  glm::quat rightRot =
-      CesiumUtility::Math::rotation(glm::vec3(1.0f, 0.0f, 0.0f), innerRight);
-  return upRot * rightRot;
+  glm::vec3 forward = cross(right, up);
+  glm::mat3x3 rotMat(right, up, forward);
+  return glm::quat(rotMat);
 }
 
 struct ConvertedI3dm {
@@ -189,7 +177,7 @@ struct ConvertedI3dm {
 */
 
 std::optional<I3dmContent> parseI3dmJson(
-    const gsl::span<const std::byte> featureTableJsonData,
+    const std::span<const std::byte> featureTableJsonData,
     CesiumUtility::ErrorList& errors) {
   rapidjson::Document featureTableJson;
   featureTableJson.Parse(
@@ -301,7 +289,7 @@ std::optional<I3dmContent> parseI3dmJson(
 }
 
 CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
-    const gsl::span<const std::byte>& instancesBinary,
+    const std::span<const std::byte>& instancesBinary,
     const I3dmHeader& header,
     uint32_t headerLength,
     const CesiumGltfReader::GltfReaderOptions& options,
@@ -341,13 +329,13 @@ CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
   const uint32_t numInstances = parsedContent.instancesLength;
   decodedInstances.positions.resize(numInstances, glm::vec3(0.0f, 0.0f, 0.0f));
   if (parsedContent.position.has_value()) {
-    gsl::span<const glm::vec3> rawPositions(
+    std::span<const glm::vec3> rawPositions(
         reinterpret_cast<const glm::vec3*>(
             pBinaryData + *parsedContent.position),
         numInstances);
     decodedInstances.positions.assign(rawPositions.begin(), rawPositions.end());
   } else {
-    gsl::span<const uint16_t[3]> rawQuantizedPositions(
+    std::span<const uint16_t[3]> rawQuantizedPositions(
         reinterpret_cast<const uint16_t(*)[3]>(
             pBinaryData + *parsedContent.positionQuantized),
         numInstances);
@@ -371,11 +359,11 @@ CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
       glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
   if (parsedContent.normalUp.has_value() &&
       parsedContent.normalRight.has_value()) {
-    gsl::span<const glm::vec3> rawUp(
+    std::span<const glm::vec3> rawUp(
         reinterpret_cast<const glm::vec3*>(
             pBinaryData + *parsedContent.normalUp),
         numInstances);
-    gsl::span<const glm::vec3> rawRight(
+    std::span<const glm::vec3> rawRight(
         reinterpret_cast<const glm::vec3*>(
             pBinaryData + *parsedContent.normalRight),
         numInstances);
@@ -390,11 +378,11 @@ CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
       parsedContent.normalUpOct32p.has_value() &&
       parsedContent.normalRightOct32p.has_value()) {
 
-    gsl::span<const uint16_t[2]> rawUpOct(
+    std::span<const uint16_t[2]> rawUpOct(
         reinterpret_cast<const uint16_t(*)[2]>(
             pBinaryData + *parsedContent.normalUpOct32p),
         numInstances);
-    gsl::span<const uint16_t[2]> rawRightOct(
+    std::span<const uint16_t[2]> rawRightOct(
         reinterpret_cast<const uint16_t(*)[2]>(
             pBinaryData + *parsedContent.normalRightOct32p),
         numInstances);
@@ -434,7 +422,7 @@ CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
   }
   decodedInstances.scales.resize(numInstances, glm::vec3(1.0, 1.0, 1.0));
   if (parsedContent.scale.has_value()) {
-    gsl::span<const float> rawScales(
+    std::span<const float> rawScales(
         reinterpret_cast<const float*>(pBinaryData + *parsedContent.scale),
         numInstances);
     std::transform(
@@ -444,7 +432,7 @@ CesiumAsync::Future<ConvertedI3dm> convertI3dmContent(
         [](float scaleVal) { return glm::vec3(scaleVal); });
   }
   if (parsedContent.scaleNonUniform.has_value()) {
-    gsl::span<const glm::vec3> rawScalesNonUniform(
+    std::span<const glm::vec3> rawScalesNonUniform(
         reinterpret_cast<const glm::vec3*>(
             pBinaryData + *parsedContent.scaleNonUniform),
         numInstances);
@@ -819,7 +807,7 @@ void instantiateGltfInstances(
 } // namespace
 
 CesiumAsync::Future<GltfConverterResult> I3dmToGltfConverter::convert(
-    const gsl::span<const std::byte>& instancesBinary,
+    const std::span<const std::byte>& instancesBinary,
     const CesiumGltfReader::GltfReaderOptions& options,
     const AssetFetcher& assetFetcher) {
   ConvertedI3dm convertedI3dm;

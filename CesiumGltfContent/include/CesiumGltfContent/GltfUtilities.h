@@ -63,7 +63,7 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
    * `RTC_CENTER` in the. If the given model does not have this extension, then
    * this function will return the `rootTransform` unchanged.
    *
-   * @param model The glTF model
+   * @param gltf The glTF model
    * @param rootTransform The matrix that will be multiplied with the transform
    * @return The result of multiplying the `RTC_CENTER` with the
    * `rootTransform`.
@@ -103,12 +103,13 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
    * value than west.
    *
    * If the glTF contains no geometry, the returned region's rectangle
-   * will be {@link GlobeRectangle::EMPTY}, its minimum height will be 1.0, and
+   * will be {@link CesiumGeospatial::GlobeRectangle::EMPTY}, its minimum height will be 1.0, and
    * its maximum height will be -1.0 (the minimum will be greater than the
    * maximum).
    *
    * @param gltf The model.
    * @param transform The transform from model coordinates to ECEF coordinates.
+   * @param ellipsoid The {@link CesiumGeospatial::Ellipsoid}.
    * @return The computed bounding region.
    */
   static CesiumGeospatial::BoundingRegion computeBoundingRegion(
@@ -141,8 +142,8 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
   static void collapseToSingleBuffer(CesiumGltf::Model& gltf);
 
   /**
-   * @brief Copies the content of one {@link Buffer} to the end of another,
-   * updates all {@link BufferView} instances to refer to the destination
+   * @brief Copies the content of one {@link CesiumGltf::Buffer} to the end of another,
+   * updates all {@link CesiumGltf::BufferView} instances to refer to the destination
    * buffer, and clears the contents of the original buffer.
    *
    * The source buffer is not removed, but it has a `byteLength` of zero after
@@ -157,27 +158,98 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
       CesiumGltf::Buffer& destination,
       CesiumGltf::Buffer& source);
 
+  /**
+   * @brief Removes unused textures from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused textures from.
+   * @param extraUsedTextureIndices Indices of textures that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedTextures(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedTextureIndices = {});
+
+  /**
+   * @brief Removes unused samplers from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused samplers from.
+   * @param extraUsedSamplerIndices Indices of samplers that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedSamplers(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedSamplerIndices = {});
+
+  /**
+   * @brief Removes unused images from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused images from.
+   * @param extraUsedImageIndices Indices of images that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedImages(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedImageIndices = {});
+
+  /**
+   * @brief Removes unused accessors from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused accessors from.
+   * @param extraUsedAccessorIndices Indices of accessors that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedAccessors(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedAccessorIndices = {});
+
+  /**
+   * @brief Removes unused buffer views from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused buffer views from.
+   * @param extraUsedBufferViewIndices Indices of buffer views that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedBufferViews(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedBufferViewIndices = {});
+
+  /**
+   * @brief Removes unused buffers from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused buffers from.
+   * @param extraUsedBufferIndices Indices of buffers that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedBuffers(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedBufferIndices = {});
+
+  /**
+   * @brief Removes unused meshes from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused meshes from.
+   * @param extraUsedMeshIndices Indices of meshes that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedMeshes(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedMeshIndices = {});
+
+  /**
+   * @brief Removes unused materials from the given glTF model.
+   *
+   * @param gltf The glTF to remove unused materials from.
+   * @param extraUsedMaterialIndices Indices of materials that should be
+   * considered "used" even if they're not referenced by anything else in the
+   * glTF.
+   */
   static void removeUnusedMaterials(
       CesiumGltf::Model& gltf,
       const std::vector<int32_t>& extraUsedMaterialIndices = {});
@@ -261,7 +333,7 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
    * @param cullBackFaces Ignore triangles that face away from ray. Front faces
    * use CCW winding order.
    * @param gltfTransform Optional matrix to apply to entire gltf model.
-   * @param return IntersectResult describing outcome
+   * @returns IntersectResult describing outcome
    */
   static IntersectResult intersectRayGltfModel(
       const CesiumGeometry::Ray& ray,

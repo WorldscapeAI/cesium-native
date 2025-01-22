@@ -5,14 +5,17 @@
 #include "QuadtreeTileID.h"
 #include "TileAvailabilityFlags.h"
 
-#include <gsl/span>
-
 #include <cstddef>
 #include <memory>
+#include <span>
 #include <vector>
 
 namespace CesiumGeometry {
 
+/**
+ * @brief An availability tree for a quadtree, where availability can be stored
+ * and computed based on \ref QuadtreeTileID.
+ */
 class CESIUMGEOMETRY_API QuadtreeAvailability final {
 public:
   /**

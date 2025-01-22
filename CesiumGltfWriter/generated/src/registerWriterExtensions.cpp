@@ -7,25 +7,6 @@
 
 #include <CesiumGltf/Buffer.h>
 #include <CesiumGltf/BufferView.h>
-#include <CesiumGltf/ExtensionBufferExtMeshoptCompression.h>
-#include <CesiumGltf/ExtensionBufferViewExtMeshoptCompression.h>
-#include <CesiumGltf/ExtensionCesiumPrimitiveOutline.h>
-#include <CesiumGltf/ExtensionCesiumRTC.h>
-#include <CesiumGltf/ExtensionCesiumTileEdges.h>
-#include <CesiumGltf/ExtensionExtInstanceFeatures.h>
-#include <CesiumGltf/ExtensionExtMeshFeatures.h>
-#include <CesiumGltf/ExtensionExtMeshGpuInstancing.h>
-#include <CesiumGltf/ExtensionKhrDracoMeshCompression.h>
-#include <CesiumGltf/ExtensionKhrMaterialsUnlit.h>
-#include <CesiumGltf/ExtensionKhrTextureBasisu.h>
-#include <CesiumGltf/ExtensionKhrTextureTransform.h>
-#include <CesiumGltf/ExtensionMeshPrimitiveExtStructuralMetadata.h>
-#include <CesiumGltf/ExtensionMeshPrimitiveKhrMaterialsVariants.h>
-#include <CesiumGltf/ExtensionModelExtStructuralMetadata.h>
-#include <CesiumGltf/ExtensionModelKhrMaterialsVariants.h>
-#include <CesiumGltf/ExtensionModelMaxarMeshVariants.h>
-#include <CesiumGltf/ExtensionNodeMaxarMeshVariants.h>
-#include <CesiumGltf/ExtensionTextureWebp.h>
 #include <CesiumGltf/FeatureIdTexture.h>
 #include <CesiumGltf/Material.h>
 #include <CesiumGltf/MaterialNormalTextureInfo.h>
@@ -37,6 +18,29 @@
 #include <CesiumGltf/Texture.h>
 #include <CesiumGltf/TextureInfo.h>
 #include <CesiumJsonWriter/ExtensionWriterContext.h>
+
+// NOLINTBEGIN(misc-include-cleaner)
+#include <CesiumGltf/ExtensionBufferExtMeshoptCompression.h>
+#include <CesiumGltf/ExtensionBufferViewExtMeshoptCompression.h>
+#include <CesiumGltf/ExtensionCesiumPrimitiveOutline.h>
+#include <CesiumGltf/ExtensionCesiumRTC.h>
+#include <CesiumGltf/ExtensionCesiumTileEdges.h>
+#include <CesiumGltf/ExtensionExtInstanceFeatures.h>
+#include <CesiumGltf/ExtensionExtMeshFeatures.h>
+#include <CesiumGltf/ExtensionExtMeshGpuInstancing.h>
+#include <CesiumGltf/ExtensionExtStructuralMetadata.h>
+#include <CesiumGltf/ExtensionKhrDracoMeshCompression.h>
+#include <CesiumGltf/ExtensionKhrMaterialsUnlit.h>
+#include <CesiumGltf/ExtensionKhrTextureBasisu.h>
+#include <CesiumGltf/ExtensionKhrTextureTransform.h>
+#include <CesiumGltf/ExtensionMeshPrimitiveExtStructuralMetadata.h>
+#include <CesiumGltf/ExtensionMeshPrimitiveKhrMaterialsVariants.h>
+#include <CesiumGltf/ExtensionModelExtStructuralMetadata.h>
+#include <CesiumGltf/ExtensionModelKhrMaterialsVariants.h>
+#include <CesiumGltf/ExtensionModelMaxarMeshVariants.h>
+#include <CesiumGltf/ExtensionNodeMaxarMeshVariants.h>
+#include <CesiumGltf/ExtensionTextureWebp.h>
+// NOLINTEND(misc-include-cleaner)
 
 namespace CesiumGltfWriter {
 
@@ -79,6 +83,9 @@ void registerWriterExtensions(
       ExtensionExtMeshGpuInstancingJsonWriter>();
   context.registerExtension<
       CesiumGltf::Node,
+      ExtensionExtStructuralMetadataJsonWriter>();
+  context.registerExtension<
+      CesiumGltf::Node,
       ExtensionNodeMaxarMeshVariantsJsonWriter>();
   context.registerExtension<
       CesiumGltf::Buffer,
@@ -86,6 +93,9 @@ void registerWriterExtensions(
   context.registerExtension<
       CesiumGltf::BufferView,
       ExtensionBufferViewExtMeshoptCompressionJsonWriter>();
+  context.registerExtension<
+      CesiumGltf::Material,
+      ExtensionExtStructuralMetadataJsonWriter>();
   context.registerExtension<
       CesiumGltf::Material,
       ExtensionKhrMaterialsUnlitJsonWriter>();

@@ -11,6 +11,7 @@
 
 namespace CesiumUtility {
 
+/** \cond Doxygen_Suppress */
 #ifndef NDEBUG
 template <bool isThreadSafe> class ThreadIdHolder;
 
@@ -24,13 +25,14 @@ template <> class ThreadIdHolder<false> {
 
 template <> class ThreadIdHolder<true> {};
 #endif
+/** \endcond */
 
 /**
  * @brief A reference-counted base class, meant to be used with
  * {@link IntrusivePointer}.
  *
  * Consider using {@link ReferenceCountedThreadSafe} or
- * {@link ReferenceCountedNoThreadSafe} instead of using this class directly.
+ * {@link ReferenceCountedNonThreadSafe} instead of using this class directly.
  *
  * @tparam T The type that is _deriving_ from this class. For example, you
  * should declare your class as

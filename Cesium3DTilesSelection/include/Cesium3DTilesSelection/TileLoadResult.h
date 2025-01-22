@@ -42,8 +42,8 @@ using TileContentKind = std::variant<
     CesiumGltf::Model>;
 
 /**
- * @brief Indicate the status of {@link TilesetContentLoader::loadTileContent} and
- * {@link TilesetContentLoader::createTileChildren} operations
+ * @brief Indicate the status of {@link Cesium3DTilesSelection::TilesetContentLoader::loadTileContent} and
+ * {@link Cesium3DTilesSelection::TilesetContentLoader::createTileChildren} operations
  */
 enum class TileLoadResultState {
   /**
@@ -103,6 +103,12 @@ struct CESIUM3DTILESSELECTION_API TileLoadResult {
       rasterOverlayDetails;
 
   /**
+   * @brief The asset accessor that was used to retrieve this tile, and that
+   * should be used to retrieve further resources referenced by the tile.
+   */
+  std::shared_ptr<CesiumAsync::IAssetAccessor> pAssetAccessor;
+
+  /**
    * @brief The request that is created to download the tile content.
    */
   std::shared_ptr<CesiumAsync::IAssetRequest> pCompletedRequest;
@@ -133,17 +139,23 @@ struct CESIUM3DTILESSELECTION_API TileLoadResult {
   /**
    * @brief Create a result with Failed state
    *
+   * @param pAssetAccessor The \ref CesiumAsync::IAssetAccessor "IAssetAccessor"
+   * used to load tiles.
    * @param pCompletedRequest The failed request
    */
   static TileLoadResult createFailedResult(
+      std::shared_ptr<CesiumAsync::IAssetAccessor> pAssetAccessor,
       std::shared_ptr<CesiumAsync::IAssetRequest> pCompletedRequest);
 
   /**
    * @brief Create a result with RetryLater state
    *
+   * @param pAssetAccessor The \ref CesiumAsync::IAssetAccessor "IAssetAccessor"
+   * used to load tiles.
    * @param pCompletedRequest The failed request
    */
   static TileLoadResult createRetryLaterResult(
+      std::shared_ptr<CesiumAsync::IAssetAccessor> pAssetAccessor,
       std::shared_ptr<CesiumAsync::IAssetRequest> pCompletedRequest);
 };
 

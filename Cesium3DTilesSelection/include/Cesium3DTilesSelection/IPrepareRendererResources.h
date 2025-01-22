@@ -7,9 +7,9 @@
 #include <CesiumRasterOverlays/IPrepareRasterOverlayRendererResources.h>
 
 #include <glm/vec2.hpp>
-#include <gsl/span>
 
 #include <any>
+#include <span>
 
 namespace CesiumAsync {
 class AsyncSystem;
@@ -31,8 +31,26 @@ namespace Cesium3DTilesSelection {
 
 class Tile;
 
+/**
+ * The data of a loaded tile together with a pointer to "render resources" data
+ * representing the result of \ref
+ * IPrepareRendererResources::prepareInLoadThread "prepareInLoadThread".
+ */
 struct TileLoadResultAndRenderResources {
+  /**
+   * @brief The \ref TileLoadResult passed to \ref
+   * IPrepareRendererResources::prepareInLoadThread "prepareInLoadThread" in the
+   * first place.
+   */
   TileLoadResult result;
+  /**
+   * @brief A pointer to the render resources for this tile.
+
+   * Cesium Native doesn't know what this pointer means, and doesn't need to
+   * know what it means. This pointer is stored in a tile's content as a \ref
+   * TileRenderContent only so that it can be returned to the implementing
+   * application as needed and used for rendering there.
+   */
   void* pRenderResources{nullptr};
 };
 
@@ -45,8 +63,7 @@ struct TileLoadResultAndRenderResources {
  * data of a {@link Tile} so that it can be used for rendering.
  *
  * Instances of this class are associated with a {@link Tileset}, in the
- * {@link TilesetExternals} structure that can be obtained
- * via {@link Tileset::getExternals}.
+ * {@link TilesetExternals} structure that is passed to the constructor.
  */
 class CESIUM3DTILESSELECTION_API IPrepareRendererResources
     : public CesiumRasterOverlays::IPrepareRasterOverlayRendererResources {
