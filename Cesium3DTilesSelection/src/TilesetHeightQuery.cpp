@@ -1,13 +1,34 @@
 #include "TilesetHeightQuery.h"
 
-#include "TileUtilities.h"
 #include "TilesetContentManager.h"
 
+#include <Cesium3DTilesSelection/BoundingVolume.h>
 #include <Cesium3DTilesSelection/ITilesetHeightSampler.h>
 #include <Cesium3DTilesSelection/SampleHeightResult.h>
+#include <Cesium3DTilesSelection/Tile.h>
+#include <Cesium3DTilesSelection/TileContent.h>
+#include <Cesium3DTilesSelection/TileRefine.h>
+#include <CesiumGeometry/BoundingCylinderRegion.h>
 #include <CesiumGeometry/IntersectionTests.h>
+#include <CesiumGeospatial/BoundingRegion.h>
+#include <CesiumGeospatial/BoundingRegionWithLooseFittingHeights.h>
+#include <CesiumGeospatial/Cartographic.h>
+#include <CesiumGeospatial/Ellipsoid.h>
 #include <CesiumGeospatial/GlobeRectangle.h>
+#include <CesiumGeospatial/S2CellBoundingVolume.h>
 #include <CesiumGltfContent/GltfUtilities.h>
+
+#include <glm/exponential.hpp>
+
+#include <cstddef>
+#include <iterator>
+#include <list>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
 
 using namespace Cesium3DTilesSelection;
 using namespace CesiumGeospatial;
@@ -52,6 +73,13 @@ bool boundingVolumeContainsCoordinate(
       return s2Cell.computeBoundingRegion(ellipsoid).getRectangle().contains(
           coordinate);
     }
+
+    bool operator()(const BoundingCylinderRegion& cylinderRegion) noexcept {
+      std::optional<double> t = IntersectionTests::rayOBBParametric(
+          ray,
+          cylinderRegion.toOrientedBoundingBox());
+      return t && t.value() >= 0;
+    }
   };
 
   return std::visit(Operation{ray, coordinate, ellipsoid}, boundingVolume);
@@ -89,6 +117,25 @@ TilesetHeightQuery::TilesetHeightQuery(
       candidateTiles(),
       previousCandidateTiles() {}
 
+Cesium3DTilesSelection::TilesetHeightQuery::~TilesetHeightQuery() {
+  for (Tile* pTile : candidateTiles) {
+    pTile->decrementDoNotUnloadSubtreeCount(
+        "TilesetHeightQuery::~TilesetHeightQuery destructing candidateTiles");
+  }
+
+  for (Tile* pTile : additiveCandidateTiles) {
+    pTile->decrementDoNotUnloadSubtreeCount(
+        "TilesetHeightQuery::~TilesetHeightQuery "
+        "destructing additiveCandidateTiles");
+  }
+
+  for (Tile* pTile : previousCandidateTiles) {
+    pTile->decrementDoNotUnloadSubtreeCount(
+        "TilesetHeightQuery::~TilesetHeightQuery "
+        "destructing previousCandidateTiles");
+  }
+}
+
 void TilesetHeightQuery::intersectVisibleTile(
     Tile* pTile,
     std::vector<std::string>& outWarnings) {
@@ -113,9 +160,9 @@ void TilesetHeightQuery::intersectVisibleTile(
   // Set ray info to this hit if closer, or the first hit
   if (!this->intersection.has_value()) {
     this->intersection = std::move(gltfIntersectResult.hit);
-  } else {
+  } else if (gltfIntersectResult.hit) {
     double prevDistSq = this->intersection->rayToWorldPointDistanceSq;
-    double thisDistSq = intersection->rayToWorldPointDistanceSq;
+    double thisDistSq = gltfIntersectResult.hit->rayToWorldPointDistanceSq;
     if (thisDistSq < prevDistSq)
       this->intersection = std::move(gltfIntersectResult.hit);
   }
@@ -145,7 +192,7 @@ void TilesetHeightQuery::findCandidateTiles(
 
   // If tile failed to load, this means we can't complete the intersection
   if (pTile->getState() == TileLoadState::Failed) {
-    warnings.push_back("Tile load failed during query. Ignoring.");
+    warnings.emplace_back("Tile load failed during query. Ignoring.");
     return;
   }
 
@@ -161,9 +208,14 @@ void TilesetHeightQuery::findCandidateTiles(
               *contentBoundingVolume,
               this->ray,
               this->inputPosition,
-              this->ellipsoid))
+              this->ellipsoid)) {
+        pTile->incrementDoNotUnloadSubtreeCount(
+            "TilesetHeightQuery::findCandidateTiles add to candidateTiles");
         this->candidateTiles.push_back(pTile);
+      }
     } else {
+      pTile->incrementDoNotUnloadSubtreeCount(
+          "TilesetHeightQuery::findCandidateTiles add to candidateTiles");
       this->candidateTiles.push_back(pTile);
     }
   } else {
@@ -177,9 +229,16 @@ void TilesetHeightQuery::findCandidateTiles(
                 *contentBoundingVolume,
                 this->ray,
                 this->inputPosition,
-                this->ellipsoid))
+                this->ellipsoid)) {
+          pTile->incrementDoNotUnloadSubtreeCount(
+              "TilesetHeightQuery::findCandidateTiles add to "
+              "additiveCandidateTiles");
           this->additiveCandidateTiles.push_back(pTile);
+        }
       } else {
+        pTile->incrementDoNotUnloadSubtreeCount(
+            "TilesetHeightQuery::findCandidateTiles add to "
+            "additiveCandidateTiles");
         this->additiveCandidateTiles.push_back(pTile);
       }
     }
@@ -229,7 +288,22 @@ void TilesetHeightQuery::findCandidateTiles(
     }
   }
 
+  // Decrement doNotUnloadCount for tiles currently in the queue, as the queue
+  // will be overwritten after this.
+  for (Tile* pTile : heightQueryLoadQueue) {
+    pTile->decrementDoNotUnloadSubtreeCount(
+        "TilesetHeightRequest::processHeightRequests clear from "
+        "heightQueryLoadQueue");
+  }
+
   heightQueryLoadQueue.assign(tileLoadSet.begin(), tileLoadSet.end());
+
+  // Track the pointers in the load queue in doNotUnloadCount
+  for (Tile* pTile : heightQueryLoadQueue) {
+    pTile->incrementDoNotUnloadSubtreeCount(
+        "TilesetHeightRequest::processHeightRequests assign to "
+        "heightQueryLoadQueue");
+  }
 }
 
 void Cesium3DTilesSelection::TilesetHeightRequest::failHeightRequests(
@@ -297,6 +371,12 @@ bool TilesetHeightRequest::tryCompleteHeightRequest(
       // frame.
       std::swap(query.candidateTiles, query.previousCandidateTiles);
 
+      for (Tile* pTile : query.candidateTiles) {
+        pTile->decrementDoNotUnloadSubtreeCount(
+            "TilesetHeightRequest::tryCompleteHeightRequest clear "
+            "candidateTiles");
+      }
+
       query.candidateTiles.clear();
 
       for (Tile* pCandidate : query.previousCandidateTiles) {
@@ -309,6 +389,9 @@ bool TilesetHeightRequest::tryCompleteHeightRequest(
           markTileVisited(loadedTiles, pCandidate);
 
           // Check again next frame to see if this tile has children.
+          pCandidate->incrementDoNotUnloadSubtreeCount(
+              "TilesetHeightRequest::tryCompleteHeightRequest add to "
+              "candidateTiles");
           query.candidateTiles.emplace_back(pCandidate);
         }
       }

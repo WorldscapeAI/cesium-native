@@ -1,10 +1,11 @@
 #pragma once
 
-#include "Library.h"
-
+#include <Cesium3DTilesSelection/Library.h>
+#include <CesiumAsync/IAssetAccessor.h>
 #include <CesiumGeospatial/Ellipsoid.h>
 #include <CesiumGltf/Ktx2TranscodeTargets.h>
 
+#include <any>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -100,12 +101,6 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
    * process of loading.
    */
   uint32_t maximumSimultaneousTileLoads = 20;
-
-  /**
-   * @brief The maximum number of subtrees that may simultaneously be in the
-   * process of loading.
-   */
-  uint32_t maximumSimultaneousSubtreeLoads = 20;
 
   /**
    * @brief Indicates whether the ancestors of rendered tiles should be
@@ -204,7 +199,7 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
    * unloaded until the total is under this number or until only required tiles
    * remain, whichever comes first.
    */
-  int64_t maximumCachedBytes = 512 * 1024 * 1024;
+  int64_t maximumCachedBytes = 512LL * 1024 * 1024;
 
   /**
    * @brief A table that maps the camera height above the ellipsoid to a fog
@@ -329,7 +324,7 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
    */
   CesiumGeospatial::Ellipsoid ellipsoid = CesiumGeospatial::Ellipsoid::WGS84;
 
-/**
+  /**
    * @brief Whether to calculate screen space error for tiles and to stop refining
    * them if they meet the limit.
    *
@@ -339,6 +334,11 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
    * entire world.
    */
   bool enableSse = true;
+
+  /**
+   * @brief HTTP headers to attach to requests made for this tileset.
+   */
+  std::vector<CesiumAsync::IAssetAccessor::THeader> requestHeaders;
 };
 
 } // namespace Cesium3DTilesSelection

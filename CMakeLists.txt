@@ -31,6 +31,8 @@ if (NOT VCPKG_OVERLAY_PORTS)
     endif()
 endif()
 
+list(APPEND VCPKG_OVERLAY_PORTS "${CMAKE_CURRENT_SOURCE_DIR}/extern/vcpkg/ports")
+
 message(STATUS "VCPKG_OVERLAY_PORTS ${VCPKG_OVERLAY_PORTS}")
 
 if (NOT VCPKG_OVERLAY_TRIPLETS)
@@ -44,8 +46,8 @@ message(STATUS "VCPKG_OVERLAY_TRIPLETS ${VCPKG_OVERLAY_TRIPLETS}")
 # These packages are used in the public headers of Cesium libraries, so we need to distribute the headers and binaries
 # with the installation
 # Note that fmt is a public dependency of the vcpkg version of spdlog
-# STB and uriparser aren't technically part of the public interface, but they're used by the downstream Cesium for Unreal project
-set(PACKAGES_PUBLIC asyncplusplus expected-lite fmt glm rapidjson spdlog stb uriparser)
+# STB is not technically part of the public interface, but it is used by the downstream Cesium for Unreal project
+set(PACKAGES_PUBLIC asyncplusplus expected-lite fmt glm rapidjson spdlog stb ada-url)
 # These packages are used in the code and produce binaries, but are not part of the public interface.  Therefore we need
 # to distribute the binaries for linking, but not the headers, as downstream consumers don't need them
 # OpenSSL and abseil are both dependencies of s2geometry
@@ -56,7 +58,7 @@ set(PACKAGES_PRIVATE
 )
 
 # Packages only used for testing
-set(PACKAGES_TEST catch2)
+set(PACKAGES_TEST doctest)
 
 if(NOT VCPKG_MANIFEST_MODE)
     set(PACKAGES_ALL ${PACKAGES_PUBLIC})
@@ -83,7 +85,7 @@ endif()
 include("cmake/defaults.cmake")
 
 project(cesium-native
-    VERSION 0.43.0
+    VERSION 0.45.0
     LANGUAGES CXX C
 )
 
@@ -113,6 +115,8 @@ cmake_dependent_option(
     CESIUM_ENABLE_CLANG_TIDY
     OFF
 )
+
+set(CESIUM_CLANG_TIDY_USE_THREADS 14 CACHE STRING "Sets the number of threads for run-clang-tidy to use.")
 
 if(CESIUM_INSTALL_STATIC_LIBS OR CESIUM_INSTALL_HEADERS)
     foreach(PACKAGE ${PACKAGES_PUBLIC})
@@ -179,6 +183,7 @@ option(CESIUM_TESTS_ENABLED "Whether to enable tests" ON)
 option(CESIUM_GLM_STRICT_ENABLED "Whether to force strict GLM compile definitions." ON)
 option(CESIUM_DISABLE_DEFAULT_ELLIPSOID "Whether to disable the WGS84 default value for ellipsoid parameters across cesium-native." OFF)
 option(CESIUM_MSVC_STATIC_RUNTIME_ENABLED "Whether to enable static linking for MSVC runtimes" OFF)
+option(CESIUM_DEBUG_TILE_UNLOADING "Whether to enable tracking of tile _doNotUnloadSubtreeCount modifications for tile unloading debugging." OFF)
 
 if (CESIUM_MSVC_STATIC_RUNTIME_ENABLED)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -237,7 +242,7 @@ list(APPEND CMAKE_PREFIX_PATH "${PACKAGE_BUILD_DIR}")
 # and imporeted library target ourselves. This is the case for modp_b64::modp_b64, picosha2::picosha2 and earcut. In
 # these cases, we *do* have the somewhat ugly and verbose details in the extern/CMakeLists.txt file.
 find_package(Async++ CONFIG REQUIRED)
-find_package(Catch2 CONFIG REQUIRED)
+find_package(doctest CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
 find_package(expected-lite CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
@@ -251,8 +256,8 @@ find_package(s2 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
-find_package(uriparser CONFIG REQUIRED char wchar_t)
 find_package(WebP CONFIG REQUIRED)
+find_package(ada CONFIG REQUIRED)
 
 
 # Private Library (s2geometry)

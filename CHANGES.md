@@ -1,5 +1,80 @@
 # Change Log
 
+### v0.45.0 - 2025-03-03
+
+##### Breaking Changes :mega:
+
+- Removed `TilesetOptions::maximumSimultaneousSubtreeLoads` because it was unused.
+
+##### Additions :tada:
+
+- Added `convertPropertyComponentTypeToAccessorComponentType` to `PropertyType`.
+- Added support for the following 3D Tiles extensions to `Cesium3DTiles`, `Cesium3DTilesReader`, and `Cesium3DTilesWriter`:
+  - `3DTILES_ellipsoid`
+  - `3DTILES_content_voxels`
+- Added generated classes for `EXT_primitive_voxels` and its dependencies in `CesiumGltf`, `CesiumGltfReader`, and `CesiumGltfWriter`.
+- Added `AxisAlignedBox::fromPositions`, which creates an `AxisAlignedBox` from an input vector of positions.
+- `PropertyView`, `PropertyTableView`, `PropertyTablePropertyView`, `PropertyTextureView`, and `PropertyTexturePropertyView` now support the enum metadata type in `EXT_structural_metadata`.
+- Added `TypeToDimensions` class in `PropertyTypeTraits` to obtain the dimension count of a glm vector or matrix.
+- Added `canRepresentPropertyType<T>` to `PropertyTypeTraits` to check if a C++ type can represent the given `PropertyType`.
+- Added `getName` method to `CesiumGltf::Enum`, allowing a scalar enum value to be resolved into its corresponding name in the enum.
+
+##### Fixes :wrench:
+
+- `Tile` children of external tilesets will now be cleared when the external tileset is unloaded, fixing a memory leak that happened as a result of these `Tile` skeletons accumulating over time.
+- Fixed parsing URIs that have a scheme followed by `:` instead of `://`.
+- Fixed decoding of `KHR_mesh_quantization` normalized values.
+- Requests headers specified in `TilesetOptions` are now included in tile content requests. Previously they were only included in the root tileset.json / layer.json request.
+- Fixed a crash when loading a `tileset.json` without a valid root tile.
+- Fixed a bug that could cause variable length string arrays in `EXT_structural_metadata` to be interpreted incorrectly.
+
+### v0.44.3 - 2025-02-12
+
+##### Fixes :wrench:
+
+- Fixed another bug in `GltfUtilities::parseGltfCopyright` that could cause it to crash or produce incorrect results.
+
+### v0.44.2 - 2025-02-10
+
+##### Fixes :wrench:
+
+- Fixed a bug in `GltfUtilities::parseGltfCopyright` that could cause a crash when the copyright ends with a semicolon.
+
+### v0.44.1 - 2025-02-03
+
+##### Fixes :wrench:
+
+- Fixed a bug in `CesiumIonClient::Connection` that caused the `authorize` method to use an incorrect URL.
+
+### v0.44.0 - 2025-02-03
+
+##### Breaking Changes :mega:
+
+- Removed `Math::rotation`. Use `glm::rotation` from `<glm/gtx/quaternion.hpp>` instead.
+- Removed `Math::perpVector`. Use `glm::perp` from `<glm/gtx/perpendicular.hpp>` instead.
+- Using Cesium Native in non-cmake projects now requires manually defining `GLM_ENABLE_EXPERIMENTAL`.
+- cesium-native no longer uses the `GLM_FORCE_SIZE_T_LENGTH` option with the `glm` library
+- `CullingVolume` has been moved from the `Cesium3DTilesSelection` namespace to the `CesiumGeometry` namespace.
+
+##### Additions :tada:
+
+- Added `forEachTile`, `forEachContent`, `addExtensionUsed`, `addExtensionRequired`, `removeExtensionUsed`, `removeExtensionRequired`, `isExtensionUsed`, and `isExtensionRequired` to `Cesium3DTiles::Tileset`.
+- Added conversion of I3dm batch table metadata to `EXT_structural_metadata` and `EXT_instance_features` extensions.
+- Added `CesiumIonClient::Connection::geocode` method for making geocoding queries against the Cesium ion geocoder API.
+- Added `UrlTemplateRasterOverlay` for requesting raster tiles from services using a templated URL.
+- `upsampleGltfForRasterOverlays` is now compatible with meshes using TRIANGLE_STRIP, TRIANGLE_FAN, or non-indexed TRIANGLES primitives.
+- Added `requestHeaders` field to `TilesetOptions` to allow per-tileset request headers to be specified.
+
+##### Fixes :wrench:
+
+- Fixed a crash in `GltfWriter` that would happen when the `EXT_structural_metadata` `schema` property was null.
+- Fixed a bug in `SharedAssetDepot` that could cause assertion failures in debug builds, and could rarely cause premature deletion of shared assets even in release builds.
+- Fixed a bug that could cause `Tileset::sampleHeightMostDetailed` to return a height that is not the highest one when the sampled tileset contained multiple heights at the given location.
+- `LayerJsonTerrainLoader` will now log errors and warnings when failing to load a `.terrain` file referenced in the layer.json, instead of silently ignoring them.
+- URIs containing unicode characters are now supported.
+- Fixed a crash in `CullingVolume` when the camera was very far away from the globe.
+- Fixed a bug that prevented the `culture` parameter of the `BingMapsRasterOverlay` from having an effect.
+
 ### v0.43.0 - 2025-01-02
 
 ##### Breaking Changes :mega:

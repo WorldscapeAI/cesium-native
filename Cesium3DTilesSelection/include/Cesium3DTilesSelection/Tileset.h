@@ -1,16 +1,15 @@
 #pragma once
 
-#include "Library.h"
-#include "RasterOverlayCollection.h"
-#include "SampleHeightResult.h"
-#include "Tile.h"
-#include "TilesetContentLoader.h"
-#include "TilesetExternals.h"
-#include "TilesetLoadFailureDetails.h"
-#include "TilesetOptions.h"
-#include "ViewState.h"
-#include "ViewUpdateResult.h"
-
+#include <Cesium3DTilesSelection/Library.h>
+#include <Cesium3DTilesSelection/RasterOverlayCollection.h>
+#include <Cesium3DTilesSelection/SampleHeightResult.h>
+#include <Cesium3DTilesSelection/Tile.h>
+#include <Cesium3DTilesSelection/TilesetContentLoader.h>
+#include <Cesium3DTilesSelection/TilesetExternals.h>
+#include <Cesium3DTilesSelection/TilesetLoadFailureDetails.h>
+#include <Cesium3DTilesSelection/TilesetOptions.h>
+#include <Cesium3DTilesSelection/ViewState.h>
+#include <Cesium3DTilesSelection/ViewUpdateResult.h>
 #include <CesiumAsync/AsyncSystem.h>
 #include <CesiumUtility/IntrusivePointer.h>
 
@@ -313,6 +312,9 @@ public:
   CesiumAsync::Future<SampleHeightResult> sampleHeightMostDetailed(
       const std::vector<CesiumGeospatial::Cartographic>& positions);
 
+  Tileset(const Tileset& rhs) = delete;
+  Tileset& operator=(const Tileset& rhs) = delete;
+
 private:
   /**
    * @brief The result of traversing one branch of the tile hierarchy.
@@ -469,6 +471,7 @@ private:
   void _processWorkerThreadLoadQueue();
   void _processMainThreadLoadQueue();
 
+  void _clearChildrenRecursively(Tile* pTile) noexcept;
   void _unloadCachedTiles(double timeBudget) noexcept;
   void _markTileVisited(Tile& tile) noexcept;
 
@@ -494,14 +497,14 @@ private:
 
     /**
      * @brief Medium priority tiles that are needed to render the current view
-     * the appropriate level-of-detail.
+     * at the appropriate level-of-detail.
      */
     Normal = 1,
 
     /**
-     * @brief High priority tiles that are causing extra detail to be rendered
-     * in the scene, potentially creating a performance problem and aliasing
-     * artifacts.
+     * @brief High priority tiles whose absence is causing extra detail to be
+     * rendered in the scene, potentially creating a performance problem and
+     * aliasing artifacts.
      */
     Urgent = 2
   };
@@ -564,9 +567,6 @@ private:
       const FrameState& frameState,
       const Tile& tile,
       const TileSelectionState& lastFrameSelectionState);
-
-  Tileset(const Tileset& rhs) = delete;
-  Tileset& operator=(const Tileset& rhs) = delete;
 };
 
 } // namespace Cesium3DTilesSelection

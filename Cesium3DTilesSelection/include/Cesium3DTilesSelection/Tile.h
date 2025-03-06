@@ -1,13 +1,12 @@
 #pragma once
 
-#include "BoundingVolume.h"
-#include "Library.h"
-#include "RasterMappedTo3DTile.h"
-#include "TileContent.h"
-#include "TileID.h"
-#include "TileRefine.h"
-#include "TileSelectionState.h"
-
+#include <Cesium3DTilesSelection/BoundingVolume.h>
+#include <Cesium3DTilesSelection/Library.h>
+#include <Cesium3DTilesSelection/RasterMappedTo3DTile.h>
+#include <Cesium3DTilesSelection/TileContent.h>
+#include <Cesium3DTilesSelection/TileID.h>
+#include <Cesium3DTilesSelection/TileRefine.h>
+#include <Cesium3DTilesSelection/TileSelectionState.h>
 #include <CesiumUtility/DoublyLinkedList.h>
 
 #include <glm/common.hpp>
@@ -20,8 +19,33 @@
 #include <string>
 #include <vector>
 
+#ifdef CESIUM_DEBUG_TILE_UNLOADING
+#include <unordered_map>
+#endif
+
 namespace Cesium3DTilesSelection {
 class TilesetContentLoader;
+
+#ifdef CESIUM_DEBUG_TILE_UNLOADING
+class TileDoNotUnloadSubtreeCountTracker {
+private:
+  struct Entry {
+    std::string reason;
+    bool increment;
+    int32_t newCount;
+  };
+
+public:
+  static void addEntry(
+      const uint64_t id,
+      bool increment,
+      const std::string& reason,
+      int32_t newCount);
+
+private:
+  static std::unordered_map<std::string, std::vector<Entry>> _entries;
+};
+#endif
 
 /**
  * The current state of this tile in the loading process.
@@ -188,6 +212,13 @@ public:
   std::span<const Tile> getChildren() const noexcept {
     return std::span<const Tile>(this->_children);
   }
+
+  /**
+   * @brief Clears the children of this tile.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  void clearChildren() noexcept;
 
   /**
    * @brief Assigns the given child tiles to this tile.
@@ -486,7 +517,53 @@ public:
    */
   TileLoadState getState() const noexcept;
 
+  /**
+   * @brief Returns the internal count denoting that the tile and its ancestors
+   * should not be unloaded.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  int32_t getDoNotUnloadSubtreeCount() const noexcept {
+    return this->_doNotUnloadSubtreeCount;
+  }
+
+  /**
+   * @brief Increments the internal count denoting that the tile and its
+   * ancestors should not be unloaded.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  void incrementDoNotUnloadSubtreeCount(const char* reason) noexcept;
+
+  /**
+   * @brief Decrements the internal count denoting that the tile and its
+   * ancestors should not be unloaded.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  void decrementDoNotUnloadSubtreeCount(const char* reason) noexcept;
+
+  /**
+   * @brief Increments the internal count denoting that the tile and its
+   * ancestors should not be unloaded starting with this tile's parent.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  void incrementDoNotUnloadSubtreeCountOnParent(const char* reason) noexcept;
+
+  /**
+   * @brief Decrements the internal count denoting that the tile and its
+   * ancestors should not be unloaded starting with this tile's parent.
+   *
+   * This function is not supposed to be called by clients.
+   */
+  void decrementDoNotUnloadSubtreeCountOnParent(const char* reason) noexcept;
+
 private:
+  void incrementDoNotUnloadSubtreeCount(const std::string& reason) noexcept;
+
+  void decrementDoNotUnloadSubtreeCount(const std::string& reason) noexcept;
+
   struct TileConstructorImpl {};
   template <
       typename... TileContentArgs,
@@ -548,6 +625,10 @@ private:
 
   // mapped raster overlay
   std::vector<RasterMappedTo3DTile> _rasterTiles;
+
+  // Number of existing claims on this tile preventing it and its parent
+  // external tileset (if any) from being unloaded from the tree.
+  int32_t _doNotUnloadSubtreeCount = 0;
 
   friend class TilesetContentManager;
   friend class MockTilesetContentManagerTestFixture;
