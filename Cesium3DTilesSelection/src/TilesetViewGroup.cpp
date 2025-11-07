@@ -7,6 +7,7 @@
 #include <Cesium3DTilesSelection/TilesetFrameState.h>
 #include <Cesium3DTilesSelection/TilesetViewGroup.h>
 #include <Cesium3DTilesSelection/ViewUpdateResult.h>
+#include <CesiumRasterOverlays/ActivatedRasterOverlay.h>
 #include <CesiumRasterOverlays/RasterOverlay.h>
 #include <CesiumRasterOverlays/RasterOverlayTile.h>
 #include <CesiumUtility/Assert.h>
@@ -42,7 +43,9 @@ ViewUpdateResult& TilesetViewGroup::getViewUpdateResult() {
   return this->_updateResult;
 }
 
-void TilesetViewGroup::addToLoadQueue(const TileLoadTask& task) {
+void TilesetViewGroup::addToLoadQueue(
+    const TileLoadTask& task,
+    const std::shared_ptr<GltfModifier>& pModifier) {
   Tile* pTile = task.pTile;
   CESIUM_ASSERT(pTile != nullptr);
 
@@ -60,9 +63,9 @@ void TilesetViewGroup::addToLoadQueue(const TileLoadTask& task) {
           [&](const TileLoadTask& task) { return task.pTile == pTile; }) ==
       this->_mainThreadLoadQueue.end());
 
-  if (pTile->needsWorkerThreadLoading()) {
+  if (pTile->needsWorkerThreadLoading(pModifier.get())) {
     this->_workerThreadLoadQueue.emplace_back(task);
-  } else if (pTile->needsMainThreadLoading()) {
+  } else if (pTile->needsMainThreadLoading(pModifier.get())) {
     this->_mainThreadLoadQueue.emplace_back(task);
   } else if (
       pTile->getState() == TileLoadState::ContentLoading ||
@@ -180,11 +183,11 @@ void TilesetViewGroup::finishFrame(
 
     // per-raster overlay credit
     const RasterOverlayCollection& overlayCollection = tileset.getOverlays();
-    for (auto& pTileProvider : overlayCollection.getTileProviders()) {
-      const std::optional<Credit>& overlayCredit = pTileProvider->getCredit();
-      if (overlayCredit) {
-        this->_currentFrameCredits.addCreditReference(overlayCredit.value());
-      }
+    for (auto& pActivated : overlayCollection.getActivatedOverlays()) {
+      if (pActivated->getTileProvider() == nullptr)
+        continue;
+
+      pActivated->getTileProvider()->addCredits(this->_currentFrameCredits);
     }
 
     // Add per-tile credits for tiles selected this frame.

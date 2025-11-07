@@ -53,13 +53,21 @@ if (NOT VCPKG_TRIPLET)
     else()
         set(VCPKG_TRIPLET "${DETECTED_VCPKG_TRIPLET}")
     endif()
-    if (NOT CESIUM_USE_EZVCPKG)
-        set(VCPKG_TARGET_TRIPLET "${VCPKG_TRIPLET}")
-    endif()
+
+    # If we're using ezvcpkg, ezvcpkg will update CMAKE_TOOLCHAIN_FILE to point to the vcpkg toolchain.
+    # Which means that when we hit the `project` function call below, cmake will load the vcpkg
+    # toolchain file. If VCPKG_TARGET_TRIPLET isn't set by that time, vcpkg will set it itself, and
+    # maybe not to what we want. So set VCPKG_TARGET_TRIPLET explicit here so that we're sure to get
+    # the right one.
+    #
+    # If we're _not_ using ezvcpkg, then we also must set VCPKG_TARGET_TRIPLET, but for a different reason.
+    # VCPKG_TRIPLET is only an ezvcpkg thing, vcpkg itself only knows about VCPKG_TARGET_TRIPLET.
+    set(VCPKG_TARGET_TRIPLET "${VCPKG_TRIPLET}")
 endif()
 
 message(STATUS "VCPKG_TRIPLET ${VCPKG_TRIPLET}")
 message(STATUS "VCPKG_TARGET_TRIPLET ${VCPKG_TARGET_TRIPLET}")
+message(STATUS "VCPKG_PLATFORM_TOOLSET_VERSION $ENV{VCPKG_PLATFORM_TOOLSET_VERSION}")
 
 if (NOT VCPKG_OVERLAY_PORTS)
     if (DEFINED ENV{VCPKG_OVERLAY_PORTS})
@@ -116,7 +124,7 @@ if(CESIUM_USE_EZVCPKG)
     list(APPEND PACKAGES_ALL ${PACKAGES_TEST})
 
     ezvcpkg_fetch(
-        COMMIT dbe35ceb30c688bf72e952ab23778e009a578f18
+        COMMIT 2025.09.17
         PACKAGES ${PACKAGES_ALL}
         # Clean the build trees after building, so that we don't use a ton a disk space on the CI cache
         CLEAN_BUILDTREES
@@ -135,7 +143,7 @@ endif()
 include("cmake/defaults.cmake")
 
 project(cesium-native
-    VERSION 0.51.0
+    VERSION 0.53.0
     LANGUAGES CXX C
 )
 
@@ -170,8 +178,8 @@ set(CESIUM_CLANG_TIDY_USE_THREADS 14 CACHE STRING "Sets the number of threads fo
 
 if(CESIUM_INSTALL_STATIC_LIBS OR CESIUM_INSTALL_HEADERS AND EZVCPKG_PACKAGES_DIR)
     foreach(PACKAGE ${PACKAGES_PUBLIC})
-        string(REGEX REPLACE "\[.*\]" "" PACKAGE ${PACKAGE})
-        set(PACKAGE_DIR ${PACKAGE_BASE_DIR}/${PACKAGE}_${VCPKG_TRIPLET})
+        string(REGEX REPLACE "\\[.*\\]" "" PACKAGE "${PACKAGE}")
+        set(PACKAGE_DIR "${PACKAGE_BASE_DIR}/${PACKAGE}_${VCPKG_TRIPLET}")
         message(DEBUG "PACKAGE_DIR ${PACKAGE_DIR}")
 
         if(CESIUM_INSTALL_HEADERS AND NOT PACKAGE IN_LIST CESIUM_EXCLUDE_INSTALL_HEADERS)
@@ -192,7 +200,8 @@ endif()
 
 if(CESIUM_INSTALL_STATIC_LIBS AND NOT VCPKG_MANIFEST_MODE)
     foreach(PACKAGE ${PACKAGES_PRIVATE})
-        set(PACKAGE_DIR ${PACKAGE_BASE_DIR}/${PACKAGE}_${VCPKG_TRIPLET})
+        string(REGEX REPLACE "\\[.*\\]" "" PACKAGE "${PACKAGE}")
+        set(PACKAGE_DIR "${PACKAGE_BASE_DIR}/${PACKAGE}_${VCPKG_TRIPLET}")
         message(DEBUG "PACKAGE_DIR ${PACKAGE_DIR}")
         if (NOT PACKAGE IN_LIST CESIUM_EXCLUDE_INSTALL_STATIC_LIBS AND EXISTS ${PACKAGE_DIR}/lib)
             install(
@@ -291,26 +300,26 @@ list(APPEND CMAKE_PREFIX_PATH "${PACKAGE_BUILD_DIR}")
 # they won't be visible in this scope nor any of the subdirectories for the actual libraries.
 #
 # However, for some of the vcpkg built libraries where they don't provide a prope cmake config file, we have to declare
-# and imporeted library target ourselves. This is the case for modp_b64::modp_b64, picosha2::picosha2 and earcut. In
+# an imported library target ourselves. This is the case for modp_b64::modp_b64, picosha2::picosha2 and earcut. In
 # these cases, we *do* have the somewhat ugly and verbose details in the extern/CMakeLists.txt file.
 #
 # XXX Above comment should be obsoleted by these first calls to
 # find_package, which resolve to our own modules that provide
 # targets. If needed, they can be installed with CMake config files
 # etc.
-find_package(zlib-ng REQUIRED)
 find_package(modp_b64 REQUIRED)
 
 find_package(ada CONFIG REQUIRED)
 find_package(Async++ CONFIG REQUIRED)
+find_package(blend2d CONFIG REQUIRED)
 find_package(doctest CONFIG REQUIRED)
 find_package(draco CONFIG REQUIRED)
 find_package(expected-lite CONFIG REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(Ktx CONFIG REQUIRED)
-find_package(libmorton CONFIG REQUIRED)
 find_package(libjpeg-turbo CONFIG REQUIRED)
+find_package(libmorton CONFIG REQUIRED)
 find_package(meshoptimizer CONFIG REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(s2 CONFIG REQUIRED)
@@ -318,16 +327,12 @@ find_package(spdlog CONFIG REQUIRED)
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(WebP CONFIG REQUIRED)
-find_package(blend2d CONFIG REQUIRED)
+find_package(zlib-ng CONFIG REQUIRED)
+
 # asmjit should not be included with iOS builds as iOS doesn't support JIT compilation.
 if(NOT IOS AND NOT VCPKG_CMAKE_SYSTEM_NAME MATCHES "iOS")
     find_package(asmjit CONFIG REQUIRED)
 endif()
-
-if(NOT CESIUM_DISABLE_CURL)
-    find_package(CURL REQUIRED)
-endif()
-
 
 if(NOT CESIUM_DISABLE_CURL)
     find_package(CURL REQUIRED)
@@ -382,7 +387,6 @@ if(CESIUM_INSTALL_STATIC_LIBS AND CESIUM_INSTALL_HEADERS)
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cesium-native/cmake)
 
   install(FILES
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/Findzlib-ng.cmake"
     "${CMAKE_CURRENT_LIST_DIR}/cmake/modules/Findmodp_b64.cmake"
     DESTINATION ${CMAKE_INSTALL_DATADIR}/cesium-native/cmake)
 
