@@ -449,8 +449,11 @@ void findClosestRayHit(
     const CesiumGltf::MeshPrimitive& primitive,
     bool cullBackFaces,
     double& tMinOut,
-    std::vector<std::string>& warnings) {
-
+    std::vector<std::string>& warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 2/30
+    glm::dvec3* faceNormalOut = nullptr) 
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 2/30
+{
   // Need at least 3 positions to form a triangle
   if (positionView.size() < 3) {
     warnings.emplace_back("Skipping mesh with less than 3 vertex positions");
@@ -495,7 +498,14 @@ void findClosestRayHit(
       // Only consider hits in front of the ray
       bool validHit = tCurr && tCurr.value() >= 0;
       if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest))
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 3/30
+      {
+        if (faceNormalOut)
+          *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
         tClosest = tCurr.value();
+      }
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 3/30
     }
   } else if (primitive.mode == MeshPrimitive::Mode::TRIANGLE_STRIP) {
     for (int64_t i = 2; i < positionView.size(); ++i) {
@@ -536,7 +546,14 @@ void findClosestRayHit(
 
       bool validHit = tCurr && tCurr.value() >= 0;
       if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest))
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 4/30
+      {
+        if (faceNormalOut)
+          *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
         tClosest = tCurr.value();
+      }
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 4/30
     }
   } else {
     assert(primitive.mode == MeshPrimitive::Mode::TRIANGLE_FAN);
@@ -572,8 +589,15 @@ void findClosestRayHit(
 
       bool validHit = tCurr && tCurr.value() >= 0;
       if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest))
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 5/30
+      {
+        if (faceNormalOut)
+          *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
         tClosest = tCurr.value();
+      }
     }
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 5/30
   }
   tMinOut = tClosest;
 }
@@ -586,7 +610,11 @@ void findClosestIndexedRayHit(
     const CesiumGltf::MeshPrimitive& primitive,
     bool cullBackFaces,
     double& tMinOut,
-    std::vector<std::string>& warnings) {
+    std::vector<std::string>& warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 6/30
+    glm::dvec3* faceNormalOut = nullptr)
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 6/30
+{
 
   // Need at least 3 vertices to form a triangle
   if (indicesView.size() < 3) {
@@ -644,8 +672,15 @@ void findClosestIndexedRayHit(
       // Set result to this hit if closer, or the first one
       // Only consider hits in front of the ray
       bool validHit = tCurr && tCurr.value() >= 0;
-      if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest))
+      if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest)) 
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 7/30
+      {
+        if (faceNormalOut)
+          *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
         tClosest = tCurr.value();
+      }
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 7/30
     }
   } else if (primitive.mode == MeshPrimitive::Mode::TRIANGLE_STRIP) {
     for (int64_t i = 2; i < indicesView.size(); ++i) {
@@ -693,8 +728,15 @@ void findClosestIndexedRayHit(
           cullBackFaces);
 
       bool validHit = tCurr && tCurr.value() >= 0;
-      if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest))
+      if (validHit && (tClosest == -1.0 || tCurr.value() < tClosest)) 
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 8/30
+      {
+        if(faceNormalOut)
+           *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
         tClosest = tCurr.value();
+      }
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 8/30
     }
   } else {
     assert(primitive.mode == MeshPrimitive::Mode::TRIANGLE_FAN);
@@ -741,8 +783,15 @@ void findClosestIndexedRayHit(
             cullBackFaces);
 
         bool validHit = tCurr && tCurr.value() >= 0;
-        if (validHit && (tCurr < tClosest || tClosest == -1.0))
+        if (validHit && (tCurr < tClosest || tClosest == -1.0)) 
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 9/30
+        {
+            if(faceNormalOut)
+              *faceNormalOut = glm::normalize(glm::cross(vert1 - vert0, vert2 - vert0));
+
           tClosest = tCurr.value();
+        }
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 9/30
       }
     }
   }
@@ -1289,7 +1338,11 @@ std::optional<glm::dvec3> intersectRayScenePrimitive(
     const Accessor& positionAccessor,
     const glm::dmat4x4& primitiveToWorld,
     bool cullBackFaces,
-    std::vector<std::string>& warnings) {
+    std::vector<std::string>& warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 10/30
+    glm::dvec3* faceNormalOut = nullptr) 
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 10/30
+{
   glm::dmat4x4 worldToPrimitive = glm::inverse(primitiveToWorld);
   CesiumGeometry::Ray transformedRay = ray.transform(worldToPrimitive);
 
@@ -1330,7 +1383,11 @@ std::optional<glm::dvec3> intersectRayScenePrimitive(
        &primitive,
        cullBackFaces,
        &tClosest,
-       &warnings](const auto& positionView) {
+       &warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 11/30
+       &faceNormalOut](const auto& positionView) 
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 11/30
+       {
         // Bail on invalid view
         if (positionView.status() != AccessorViewStatus::Valid) {
           warnings.emplace_back(
@@ -1366,7 +1423,11 @@ std::optional<glm::dvec3> intersectRayScenePrimitive(
                &primitive,
                cullBackFaces,
                &tClosest,
-               &warnings](const auto& indexView) {
+               &warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 12/30
+               &faceNormalOut](const auto& indexView) 
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 12/30
+               {
                 // Bail on invalid view
                 if (indexView.status() != AccessorViewStatus::Valid) {
                   warnings.emplace_back(
@@ -1381,7 +1442,10 @@ std::optional<glm::dvec3> intersectRayScenePrimitive(
                     primitive,
                     cullBackFaces,
                     tClosest,
-                    warnings);
+                    warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 13/30
+                    faceNormalOut);
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 13/30
               });
         } else {
           // Non-indexed triangles
@@ -1391,7 +1455,10 @@ std::optional<glm::dvec3> intersectRayScenePrimitive(
               primitive,
               cullBackFaces,
               tClosest,
-              warnings);
+              warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 14/30
+              faceNormalOut);
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 14/30
         }
       });
   assert(tClosest >= -1.0);
@@ -1479,6 +1546,9 @@ GltfUtilities::IntersectResult GltfUtilities::intersectRayGltfModel(
         glm::dmat4x4 primitiveToWorld = rootTransform * nodeTransform;
 
         std::optional<glm::dvec3> primitiveHitPoint;
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 15/30
+        glm::dvec3 faceNormal;
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 15/30
         primitiveHitPoint = intersectRayScenePrimitive(
             ray,
             model,
@@ -1486,10 +1556,18 @@ GltfUtilities::IntersectResult GltfUtilities::intersectRayGltfModel(
             *pPositionAccessor,
             primitiveToWorld,
             cullBackFaces,
-            result.warnings);
+            result.warnings,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 16/30
+            &faceNormal);
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 16/30
 
         if (!primitiveHitPoint.has_value())
           return;
+
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 17/30
+        glm::dvec3 worldNormal = glm::normalize(
+            glm::dvec3(glm::transpose(glm::inverse(primitiveToWorld)) * glm::dvec4(faceNormal, 0.0)));
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 17/30
 
         // We have a hit, determine if it's the closest one
 
@@ -1525,7 +1603,10 @@ GltfUtilities::IntersectResult GltfUtilities::intersectRayGltfModel(
               std::move(worldPoint),
               rayToWorldPointDistanceSq,
               meshId,
-              primitiveId};
+              primitiveId,
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 18/30
+              worldNormal};
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 18/30
           return;
         }
 
@@ -1537,6 +1618,9 @@ GltfUtilities::IntersectResult GltfUtilities::intersectRayGltfModel(
           result.hit->rayToWorldPointDistanceSq = rayToWorldPointDistanceSq;
           result.hit->meshId = meshId;
           result.hit->primitiveId = primitiveId;
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 19/30
+          result.hit->faceNormal = worldNormal;
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 19/30
         }
       });
 

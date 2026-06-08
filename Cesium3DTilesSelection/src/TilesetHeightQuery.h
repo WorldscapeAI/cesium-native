@@ -136,6 +136,16 @@ public:
    * exists.
    */
   std::optional<double> getHeightFromIntersection() const;
+
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 25/30
+  /**
+   * @brief Compute the sampled normal from the current intersection, if any.
+   *
+   * @return The normal vector at the intersection point, or std::nullopt if no intersection
+   * exists.
+   */
+  std::optional<glm::dvec3> getNormalFromIntersection() const;
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 25/30
 };
 
 /**

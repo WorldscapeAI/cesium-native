@@ -5,6 +5,11 @@
 #include <string>
 #include <vector>
 
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 20/30
+#include <optional>
+#include <glm/ext/vector_double3.hpp>
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 20/30
+
 namespace Cesium3DTilesSelection {
 
 /**
@@ -22,6 +27,20 @@ struct SampleHeightResult {
    * {@link SampleHeightResult::sampleSuccess} at the same index.
    */
   std::vector<CesiumGeospatial::Cartographic> positions;
+
+  // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 21/30
+  /**
+   * @brief The normals at the sampled positions.
+   * 
+   * For each resulting normal, it will be the normal vector sampled from the 
+   * tileset at that position, or std::nullopt if the normal could not be sampled 
+   * (e.g. due to a failed height sample or because the tile's content doesn't provide normals). 
+   * To determine whether a normal was successfully sampled, look at the value of {@link SampleHeightResult::sampleSuccess} 
+   * at the same index.
+   * 
+   */
+  std::vector<std::optional<glm::dvec3>> normals;
+  // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 21/30
 
   /**
    * @brief The success of each sample.

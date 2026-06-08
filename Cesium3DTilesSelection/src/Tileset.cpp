@@ -595,6 +595,12 @@ SampleHeightResult Tileset::sampleHeightCurrentDetail(
   results.positions.resize(positions.size(), Cartographic(0.0, 0.0, 0.0));
   results.sampleSuccess.resize(positions.size(), false);
 
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 22/30
+
+  results.normals.resize(positions.size());
+
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 22/30
+
   const Tile* pRootTile = this->_pTilesetContentManager->getRootTile();
   if (!pRootTile) {
     results.warnings.emplace_back(
@@ -617,9 +623,23 @@ SampleHeightResult Tileset::sampleHeightCurrentDetail(
 
     results.positions[i] = positions[i];
     std::optional<double> height = query.getHeightFromIntersection();
+
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 23/30
+
+    std::optional<glm::dvec3> normal = query.getNormalFromIntersection();
+
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 23/30
+
     results.sampleSuccess[i] = height.has_value();
     if (height.has_value()) {
       results.positions[i].height = *height;
+
+// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 24/30
+
+      results.normals[i] = normal;
+
+// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 24/30
+
     }
   }
 
