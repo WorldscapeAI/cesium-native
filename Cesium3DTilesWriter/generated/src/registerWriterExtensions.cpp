@@ -7,14 +7,18 @@
 
 #include <Cesium3DTiles/BoundingVolume.h>
 #include <Cesium3DTiles/Content.h>
+#include <Cesium3DTiles/MetadataEntity.h>
 #include <Cesium3DTiles/Tileset.h>
 #include <CesiumJsonWriter/ExtensionWriterContext.h>
 
 // NOLINTBEGIN(misc-include-cleaner)
 #include <Cesium3DTiles/Extension3dTilesBoundingVolumeCylinder.h>
 #include <Cesium3DTiles/Extension3dTilesBoundingVolumeS2.h>
+#include <Cesium3DTiles/Extension3dTilesContentConditional.h>
 #include <Cesium3DTiles/Extension3dTilesEllipsoid.h>
 #include <Cesium3DTiles/ExtensionContent3dTilesContentVoxels.h>
+#include <Cesium3DTiles/ExtensionMetadataEntityMaxarContentGeoJson.h>
+#include <Cesium3DTiles/ExtensionTilesetMaxarContentGeoJson.h>
 // NOLINTEND(misc-include-cleaner)
 
 namespace Cesium3DTilesWriter {
@@ -32,7 +36,16 @@ void registerWriterExtensions(
       Cesium3DTiles::Tileset,
       Extension3dTilesEllipsoidJsonWriter>();
   context.registerExtension<
+      Cesium3DTiles::Tileset,
+      Extension3dTilesContentConditionalJsonWriter>();
+  context.registerExtension<
+      Cesium3DTiles::Tileset,
+      ExtensionTilesetMaxarContentGeoJsonJsonWriter>();
+  context.registerExtension<
       Cesium3DTiles::Content,
       ExtensionContent3dTilesContentVoxelsJsonWriter>();
+  context.registerExtension<
+      Cesium3DTiles::MetadataEntity,
+      ExtensionMetadataEntityMaxarContentGeoJsonJsonWriter>();
 }
 } // namespace Cesium3DTilesWriter

@@ -13,8 +13,11 @@
 #include "ExtensionExtInstanceFeaturesJsonHandler.h"
 #include "ExtensionExtMeshFeaturesJsonHandler.h"
 #include "ExtensionExtMeshGpuInstancingJsonHandler.h"
+#include "ExtensionExtMeshPolygonJsonHandler.h"
+#include "ExtensionExtMeshPrimitiveEdgeVisibilityJsonHandler.h"
 #include "ExtensionExtPrimitiveVoxelsJsonHandler.h"
 #include "ExtensionExtStructuralMetadataJsonHandler.h"
+#include "ExtensionKhrBillboardJsonHandler.h"
 #include "ExtensionKhrDracoMeshCompressionJsonHandler.h"
 #include "ExtensionKhrGaussianSplattingCompressionSpz2JsonHandler.h"
 #include "ExtensionKhrGaussianSplattingJsonHandler.h"
@@ -88,6 +91,12 @@ void registerReaderExtensions(CesiumJsonReader::JsonReaderOptions& options) {
       CesiumGltf::MeshPrimitive,
       ExtensionKhrGaussianSplattingJsonHandler>();
   options.registerExtension<
+      CesiumGltf::MeshPrimitive,
+      ExtensionExtMeshPrimitiveEdgeVisibilityJsonHandler>();
+  options.registerExtension<
+      CesiumGltf::MeshPrimitive,
+      ExtensionExtMeshPolygonJsonHandler>();
+  options.registerExtension<
       CesiumGltf::Node,
       ExtensionExtInstanceFeaturesJsonHandler>();
   options.registerExtension<
@@ -99,6 +108,8 @@ void registerReaderExtensions(CesiumJsonReader::JsonReaderOptions& options) {
   options.registerExtension<
       CesiumGltf::Node,
       ExtensionNodeMaxarMeshVariantsJsonHandler>();
+  options
+      .registerExtension<CesiumGltf::Node, ExtensionKhrBillboardJsonHandler>();
   options.registerExtension<
       CesiumGltf::Buffer,
       ExtensionBufferExtMeshoptCompressionJsonHandler>();
