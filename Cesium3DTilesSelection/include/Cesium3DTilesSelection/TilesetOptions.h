@@ -292,17 +292,6 @@ struct CESIUM3DTILESSELECTION_API TilesetOptions {
   CesiumGeospatial::Ellipsoid ellipsoid = CesiumGeospatial::Ellipsoid::WGS84;
 
   /**
-   * @brief Whether to calculate screen space error for tiles and to stop refining
-   * them if they meet the limit.
-   *
-   * This is useful in conjunction with excluders for forcing a wide region of
-   * terrain to load, but you have to supply an excluder that will enforce sane
-   * limits on the number of tiles loaded, otherwise you may end up loading the
-   * entire world.
-   */
-  bool enableSse = true;
-
-  /**
    * @brief HTTP headers to attach to requests made for this tileset.
    */
   std::vector<CesiumAsync::IAssetAccessor::THeader> requestHeaders;

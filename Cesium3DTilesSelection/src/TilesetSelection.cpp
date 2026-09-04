@@ -1124,18 +1124,8 @@ TraversalDetails visitTileIfNeeded(
     ++result.culledTilesVisited;
   }
 
-  bool meetsSse;
-  double tileSse;
-  if (context.options.enableSse)
-  {
-    tileSse = computeSse(context, frameState, tile);
-    meetsSse = meetsSseThreshold(context, tileSse, cullResult.culled);
-  }
-  else
-  {
-    meetsSse = false;
-    tileSse = 9999.0;
-  }
+  double tileSse = computeSse(context, frameState, tile);
+  bool meetsSse = meetsSseThreshold(context, tileSse, cullResult.culled);
 
   TraversalDetails details = visitTile(
       context,
