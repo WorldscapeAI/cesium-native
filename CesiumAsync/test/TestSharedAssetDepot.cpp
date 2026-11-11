@@ -10,6 +10,8 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <stdexcept>
 #include <string>
 
 using namespace CesiumAsync;
@@ -348,5 +350,76 @@ TEST_CASE("SharedAssetDepot") {
 
     pDepot->invalidate("one");
     pDepot->invalidate("one");
+  }
+
+  SUBCASE("a load invalidated while in progress gives its waiters an "
+          "independent asset") {
+    auto pDepot = createDepot();
+
+    Promise<ResultPointer<TestAsset>> promise =
+        context.asyncSystem.createPromise<ResultPointer<TestAsset>>();
+    maybeFuture = promise.getFuture();
+
+    auto futureOne = pDepot->getOrCreate(context, "one");
+
+    // Invalidate the pending load and request the key again. The replacement
+    // load completes immediately, before the original one.
+    pDepot->invalidate("one");
+    ResultPointer<TestAsset> assetTwo =
+        pDepot->getOrCreate(context, "one").waitInMainThread();
+    REQUIRE(assetTwo.pValue != nullptr);
+
+    promise.resolve(ResultPointer<TestAsset>(new TestAsset("one")));
+
+    ResultPointer<TestAsset> assetOne = futureOne.waitInMainThread();
+
+    REQUIRE(assetOne.pValue != nullptr);
+    CHECK(assetOne.pValue != assetTwo.pValue);
+    CHECK(assetOne.pValue->someValue == "one");
+    CHECK(assetOne.pValue->getDepot() == nullptr);
+    CHECK(assetTwo.pValue->getDepot() == pDepot.get());
+    CHECK(pDepot->getAssetCount() == 1);
+    CHECK(pDepot->getActiveAssetCount() == 1);
+
+    assetOne.pValue.reset();
+    assetTwo.pValue.reset();
+
+    CHECK(pDepot->getAssetCount() == 1);
+    CHECK(pDepot->getActiveAssetCount() == 0);
+    CHECK(pDepot->getInactiveAssetCount() == 1);
+  }
+
+  SUBCASE("a load invalidated while in progress that then fails with an "
+          "exception does not remove its replacement") {
+    auto pDepot = createDepot();
+
+    Promise<ResultPointer<TestAsset>> promiseOne =
+        context.asyncSystem.createPromise<ResultPointer<TestAsset>>();
+    maybeFuture = promiseOne.getFuture();
+    auto futureOne = pDepot->getOrCreate(context, "one");
+
+    pDepot->invalidate("one");
+
+    Promise<ResultPointer<TestAsset>> promiseTwo =
+        context.asyncSystem.createPromise<ResultPointer<TestAsset>>();
+    maybeFuture = promiseTwo.getFuture();
+    auto futureTwo = pDepot->getOrCreate(context, "one");
+
+    promiseOne.reject(std::runtime_error("Simulated load failure"));
+
+    ResultPointer<TestAsset> assetOne = futureOne.waitInMainThread();
+    CHECK(assetOne.pValue == nullptr);
+    CHECK(assetOne.errors.hasErrors());
+    CHECK(pDepot->getAssetCount() == 1);
+
+    promiseTwo.resolve(ResultPointer<TestAsset>(new TestAsset("one")));
+
+    ResultPointer<TestAsset> assetTwo = futureTwo.waitInMainThread();
+    REQUIRE(assetTwo.pValue != nullptr);
+    CHECK(assetTwo.pValue->getDepot() == pDepot.get());
+
+    ResultPointer<TestAsset> assetThree =
+        pDepot->getOrCreate(context, "one").waitInMainThread();
+    CHECK(assetThree.pValue == assetTwo.pValue);
   }
 }
