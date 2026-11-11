@@ -124,12 +124,12 @@ public:
    * asset is still loading, the load continues, and anyone waiting on it
    * receives an asset that is independent of the depot.
    *
-   * If an asset with the given key does not exist in the depot, this method
-   * does nothing.
+   * If no entry exists for the given key, this method does nothing.
    *
    * @param assetKey The asset key to invalidate.
-   * @returns True if the asset was invalidated; false if the asset key does not
-   * exist in the depot or was already invalidated.
+   * @returns True if a loaded asset was newly marked invalidated; otherwise,
+   * false. Pending loads and cached failures without an asset are removed from
+   * the depot but return false.
    */
   bool invalidate(const TAssetKey& assetKey);
 
