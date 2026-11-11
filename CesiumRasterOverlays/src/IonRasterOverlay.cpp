@@ -188,14 +188,12 @@ private:
                 // Invalidate by asset pointer instead of key. This way, if
                 // another `loadTileImage` has already invalidated this asset
                 // and started loading a new one, we don't inadvertently
-                // invalidate the new one. But if we don't have a valid asset,
-                // we must invalidate by key.
-                if ((assetResult.pValue &&
-                     IonRasterOverlay::getEndpointCache()->invalidate(
-                         *assetResult.pValue)) ||
-                    (!assetResult.pValue &&
-                     IonRasterOverlay::getEndpointCache()->invalidate(
-                         descriptor))) {
+                // invalidate the new one. A null result means the failed load
+                // already removed its entry, so just join or start the retry
+                // below.
+                if (assetResult.pValue &&
+                    IonRasterOverlay::getEndpointCache()->invalidate(
+                        *assetResult.pValue)) {
                   SPDLOG_LOGGER_INFO(
                       externals.pLogger,
                       "Refreshing Cesium ion token for URL {}.",
