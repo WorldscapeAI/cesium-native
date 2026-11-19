@@ -317,7 +317,8 @@ std::optional<double> TilesetHeightQuery::getHeightFromIntersection() const {
 
 // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 26/30
 
-std::optional<glm::dvec3> TilesetHeightQuery::getNormalFromIntersection() const {
+std::optional<glm::dvec3>
+TilesetHeightQuery::getNormalFromIntersection() const {
   if (!this->intersection.has_value()) {
     return std::nullopt;
   }
@@ -399,14 +400,14 @@ void Cesium3DTilesSelection::TilesetHeightRequest::failHeightRequests(
       result.positions.emplace_back(query.inputPosition);
     }
 
-// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 27/30
+    // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 27/30
 
     result.normals.reserve(request.queries.size());
     for (size_t i = 0; i < request.queries.size(); ++i) {
       result.normals.emplace_back(std::nullopt);
     }
 
-// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 27/30
+    // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 27/30
 
     request.promise.resolve(std::move(result));
   }
@@ -514,11 +515,11 @@ bool TilesetHeightRequest::tryCompleteHeightRequest(
   results.positions.resize(this->queries.size(), Cartographic(0.0, 0.0, 0.0));
   results.sampleSuccess.resize(this->queries.size());
 
-// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 28/30
+  // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 28/30
 
   results.normals.resize(this->queries.size());
 
-// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 28/30
+  // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 28/30
 
   // Populate results with completed queries
   for (size_t i = 0; i < this->queries.size(); ++i) {
@@ -527,22 +528,21 @@ bool TilesetHeightRequest::tryCompleteHeightRequest(
     results.positions[i] = query.inputPosition;
     std::optional<double> height = query.getHeightFromIntersection();
 
-// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 29/30
+    // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 29/30
 
     std::optional<glm::dvec3> normal = query.getNormalFromIntersection();
 
-// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 29/30
+    // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 29/30
 
     results.sampleSuccess[i] = height.has_value();
     if (height.has_value()) {
       results.positions[i].height = *height;
 
-// WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 30/30
+      // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 30/30
 
       results.normals[i] = normal;
 
-// WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 30/30
-
+      // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 30/30
     }
   }
 
