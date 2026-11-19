@@ -314,7 +314,10 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
      */
     int32_t primitiveId = -1;
 
-    // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 1/30, We need to be able to get the face normal of the hit triangle in world space to rotate models to align with the surface normal of the globe when placing them on the globe.
+    // WS_BEGIN_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 1/30, We need to be able to
+    // get the face normal of the hit triangle in world space to rotate models
+    // to align with the surface normal of the globe when placing them on the
+    // globe.
 
     /**
      * @brief Face normal of the hit triangle in world space
@@ -322,7 +325,6 @@ struct CESIUMGLTFCONTENT_API GltfUtilities {
     glm::dvec3 faceNormal = {};
 
     // WS_END_CHANGE, WS_EXPOSE_HIT_FACE_NORMAL, 1/30
-
   };
 
   /**
