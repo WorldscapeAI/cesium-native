@@ -120,14 +120,16 @@ public:
    * the next call to @ref getOrCreate will create the asset instead of
    * returning the existing one.
    *
-   * Anyone already using the existing asset may continue to do so.
+   * Anyone already using the existing asset may continue to do so. If the
+   * asset is still loading, the load continues, and anyone waiting on it
+   * receives an asset that is independent of the depot.
    *
-   * If an asset with the given key does not exist in the depot, this method
-   * does nothing.
+   * If no entry exists for the given key, this method does nothing.
    *
    * @param assetKey The asset key to invalidate.
-   * @returns True if the asset was invalidated; false if the asset key does not
-   * exist in the depot or was already invalidated.
+   * @returns True if a loaded asset was newly marked invalidated; otherwise,
+   * false. Pending loads and cached failures without an asset are removed from
+   * the depot but return false.
    */
   bool invalidate(const TAssetKey& assetKey);
 
@@ -298,6 +300,15 @@ private:
     std::unique_lock<std::mutex> lock;
   };
 
+  /**
+   * @brief Determines if the given entry is the one the depot currently holds
+   * for its key. An entry stops being current when it is invalidated or
+   * erased, which can happen while its asset is still loading.
+   *
+   * The depot lock must be held when this is called.
+   */
+  bool isCurrentEntryUnderLock(const AssetEntry& entry) const;
+
   // Maps asset keys to AssetEntry instances. This collection owns the asset
   // entries.
   std::unordered_map<TAssetKey, CesiumUtility::IntrusivePointer<AssetEntry>>
@@ -427,6 +438,20 @@ SharedAssetDepot<TAssetType, TAssetKey, TContext>::getOrCreate(
                        CesiumUtility::IntrusivePointer<TAssetType>>&& result) {
                 LockHolder lock = pDepot->lock();
 
+                pEntry->maybePendingAsset.reset();
+
+                // If this entry was invalidated while the asset was loading,
+                // the depot no longer tracks it, and a newer entry may already
+                // own the key. Adopting the asset into this orphaned entry
+                // would delete the asset along with the entry once this load
+                // completes, while the waiters still hold references to it.
+                // Give the waiters an independent asset instead.
+                if (!pDepot->isCurrentEntryUnderLock(*pEntry)) {
+                  return CesiumUtility::ResultPointer<TAssetType>(
+                      std::move(result.pValue),
+                      std::move(result.errors));
+                }
+
                 if (result.pValue) {
                   result.pValue->_pDepot = pDepot.get();
                   pDepot->_assetsByPointer[result.pValue.get()] = pEntry.get();
@@ -437,7 +462,6 @@ SharedAssetDepot<TAssetType, TAssetKey, TContext>::getOrCreate(
                 pEntry->pAsset =
                     std::unique_ptr<TAssetType>(result.pValue.get());
                 pEntry->errorsAndWarnings = std::move(result.errors);
-                pEntry->maybePendingAsset.reset();
 
                 // The asset is initially live because we have an
                 // IntrusivePointer to it right here. So make sure the depot
@@ -448,10 +472,13 @@ SharedAssetDepot<TAssetType, TAssetKey, TContext>::getOrCreate(
               })
           .catchImmediately([pDepot, pEntry](std::exception&& e) {
             // This asset has failed _with an exception_. We don't want to cache
-            // this type of error.
+            // this type of error. If this entry was invalidated during the
+            // load, a newer entry may own the key now, so leave that one alone.
             {
               LockHolder lock = pDepot->lock();
-              pDepot->_assets.erase(pEntry->key);
+              if (pDepot->isCurrentEntryUnderLock(*pEntry)) {
+                pDepot->_assets.erase(pEntry->key);
+              }
             }
 
             return CesiumUtility::Result<
@@ -703,6 +730,13 @@ bool SharedAssetDepot<TAssetType, TAssetKey, TContext>::invalidateUnderLock(
   lock.unlock();
 
   return wasInvalidated;
+}
+
+template <typename TAssetType, typename TAssetKey, typename TContext>
+bool SharedAssetDepot<TAssetType, TAssetKey, TContext>::isCurrentEntryUnderLock(
+    const AssetEntry& entry) const {
+  auto it = this->_assets.find(entry.key);
+  return it != this->_assets.end() && it->second.get() == &entry;
 }
 
 template <typename TAssetType, typename TAssetKey, typename TContext>
